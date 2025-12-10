@@ -743,58 +743,127 @@ const DashboardScreen = ({ navigation }: any) => {
                     : 0;
                 const percent = Math.round(progress * 100);
                 return (
-                  <View key={goal.id} style={styles.goalItem}>
-                    <View style={styles.goalHeader}>
-                      <Text style={[styles.goalName, { color: theme.text }]}>
+                  <View
+                    key={goal.id}
+                    style={{
+                      backgroundColor:
+                        theme.mode === 'dark' ? '#1f2937' : '#f9fafb',
+                      borderRadius: 16,
+                      padding: 16,
+                      marginBottom: 16,
+                      borderWidth: 1,
+                      borderColor:
+                        theme.mode === 'dark' ? '#374151' : '#e5e7eb',
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: '700',
+                          color: theme.text,
+                        }}
+                      >
                         {goal.name}
                       </Text>
-                      <View style={styles.goalRightHeader}>
-                        <Text
-                          style={[
-                            styles.goalPercentBadge,
-                            {
-                              color: theme.primary,
-                              backgroundColor: `${theme.primary}20`,
-                            },
-                          ]}
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <View
+                          style={{
+                            backgroundColor:
+                              theme.mode === 'dark' ? '#374151' : '#e5e7eb',
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 8,
+                          }}
                         >
-                          {percent}%
-                        </Text>
+                          <Text
+                            style={{
+                              color: '#3B82F6',
+                              fontSize: 12,
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            {percent}%
+                          </Text>
+                        </View>
                         <TouchableOpacity
-                          style={[
-                            styles.miniAddButton,
-                            { backgroundColor: theme.border },
-                          ]}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            backgroundColor:
+                              theme.mode === 'dark' ? '#374151' : '#e5e7eb',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
                         >
-                          <Icon name="add" size={14} color={theme.text} />
+                          <Icon
+                            name="add"
+                            size={14}
+                            color={theme.textSecondary}
+                          />
                         </TouchableOpacity>
                       </View>
                     </View>
-                    <Text
-                      style={[
-                        styles.goalAmountText,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
-                      ₹{goal.currentAmount.toLocaleString()}{' '}
-                      <Text style={{ fontSize: 12 }}>
-                        of ₹{goal.targetAmount.toLocaleString()}
-                      </Text>
-                    </Text>
+
                     <View
-                      style={[
-                        styles.progressBarBg,
-                        { backgroundColor: theme.border },
-                      ]}
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'baseline',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: '500',
+                          color: theme.textSecondary,
+                        }}
+                      >
+                        ₹
+                        {goal.currentAmount.toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </Text>
+                      <Text
+                        style={{ fontSize: 12, color: theme.textSecondary }}
+                      >
+                        of ₹
+                        {goal.targetAmount.toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{
+                        height: 8,
+                        backgroundColor:
+                          theme.mode === 'dark' ? '#374151' : '#e5e7eb',
+                        borderRadius: 4,
+                      }}
                     >
                       <View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            backgroundColor: theme.primary,
-                            width: `${percent}%`,
-                          },
-                        ]}
+                        style={{
+                          height: '100%',
+                          borderRadius: 4,
+                          backgroundColor: '#3B82F6',
+                          width: `${percent}%`,
+                        }}
                       />
                     </View>
                   </View>
