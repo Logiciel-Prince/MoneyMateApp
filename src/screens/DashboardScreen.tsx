@@ -14,7 +14,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
 import { lightTheme, darkTheme } from '../theme';
 import AddTransactionModal from '../components/AddTransactionModal';
-import { Transaction } from '../types';
+import { Transaction, Goal } from '../types';
+import AddGoalContributionModal from '../components/AddGoalContributionModal';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -148,7 +149,15 @@ const StatCard = ({
 const DashboardScreen = ({ navigation }: any) => {
   // ... existing hooks
   const systemColorScheme = useColorScheme();
-  const { transactions, accounts, goals, addTransaction, settings } = useData();
+  const {
+    transactions,
+    accounts,
+    goals,
+    addTransaction,
+    settings,
+    updateGoal,
+    updateAccount,
+  } = useData();
 
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
@@ -163,6 +172,8 @@ const DashboardScreen = ({ navigation }: any) => {
 
   const [pieMonthOffset, setPieMonthOffset] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [goalModalVisible, setGoalModalVisible] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
   // --- Calculations ---
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -307,6 +318,39 @@ const DashboardScreen = ({ navigation }: any) => {
     };
     addTransaction(newTransaction);
     setModalVisible(false);
+  };
+
+  const handleAddMoneyToGoal = (
+    goalId: string,
+    amount: number,
+    accountId?: string,
+  ) => {
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    // 1. Update Goal Amount
+    updateGoal(goalId, { currentAmount: goal.currentAmount + amount });
+
+    // 2. If account selected, deduct money and create transaction
+    if (accountId) {
+      const account = accounts.find(a => a.id === accountId);
+      if (account) {
+        updateAccount(accountId, { balance: account.balance - amount });
+
+        const newTransaction: Transaction = {
+          id: Date.now().toString(),
+          type: 'expense', // Treating as expense/transfer
+          amount: amount,
+          category: 'Savings', // Ideally we should have a generic category or pass it
+          description: `Contribution to ${goal.name}`,
+          date: new Date().toISOString().split('T')[0],
+          accountId: accountId,
+        };
+        addTransaction(newTransaction);
+      }
+    }
+    setGoalModalVisible(false);
+    setSelectedGoal(null);
   };
 
   return (
@@ -809,6 +853,10 @@ const DashboardScreen = ({ navigation }: any) => {
                             alignItems: 'center',
                             justifyContent: 'center',
                           }}
+                          onPress={() => {
+                            setSelectedGoal(goal);
+                            setGoalModalVisible(true);
+                          }}
                         >
                           <Icon
                             name="add"
@@ -895,6 +943,15 @@ const DashboardScreen = ({ navigation }: any) => {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSave={handleSaveTransaction}
+        accounts={accounts}
+      />
+
+      {/* Add Money to Goal Modal */}
+      <AddGoalContributionModal
+        visible={goalModalVisible}
+        onClose={() => setGoalModalVisible(false)}
+        onSave={handleAddMoneyToGoal}
+        goal={selectedGoal}
         accounts={accounts}
       />
     </SafeAreaView>
