@@ -1,0 +1,803 @@
+import React, {useState, useMemo} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  useColorScheme,
+  Dimensions,
+  TouchableOpacity,
+  SafeAreaView,
+} from 'react-native';
+import {PieChart} from 'react-native-chart-kit';
+import {BarChart} from 'react-native-gifted-charts';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {useData} from '../context/DataContext';
+import {lightTheme, darkTheme} from '../theme';
+import AddTransactionModal from '../components/AddTransactionModal';
+import {Transaction} from '../types';
+
+const screenWidth = Dimensions.get('window').width;
+
+import tw from 'twrnc';
+
+// ... existing imports
+
+interface StatCardProps {
+  label: string;
+  value: string | number; // Allow formatted string
+  icon: string;
+  color: string; // Can be a tailwind class like 'text-green-600' or hex
+  theme: any;
+  trend?: string; // Text like "4.2% vs last month"
+  trendDirection?: 'up' | 'down';
+  isPositive?: boolean;
+}
+
+const StatCard = ({
+  label,
+  value,
+  icon,
+  color, // e.g. "text-green-600" or hex
+  theme,
+  trend,
+  trendDirection,
+  isPositive,
+}: StatCardProps) => {
+  
+  // Resolve color: if it's a tailwind class, use tw, else use as is
+  const iconColorStyle = color.startsWith('text-') || color.startsWith('bg-') ? tw`${color}` : { color: color };
+  const iconColor = (iconColorStyle as any).color || color;
+  const iconBgColor = color.startsWith('text-') ? color.replace('text-', 'bg-').replace('600', '100') : `${color}20`; // rough approx for bg
+  
+  const bgStyle = color.startsWith('text-') ? tw`${iconBgColor} opacity-20` : { backgroundColor: `${color}20` };
+
+  return (
+    <View style={[tw`p-4 rounded-2xl mb-4`, {backgroundColor: theme.card, elevation: 2, shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.1, shadowRadius: 4}]}>
+      <View style={tw`flex-row justify-between items-start`}>
+        <View>
+          <View style={[tw`w-10 h-10 rounded-full justify-center items-center mb-2`, bgStyle]}>
+            <Icon name={icon} size={20} color={iconColor} />
+          </View>
+          <Text style={[tw`text-sm mb-1`, {color: theme.textSecondary}]}>
+            {label}
+          </Text>
+          <Text style={[tw`text-2xl font-bold mb-1`, {color: theme.text}]}>
+            {typeof value === 'number' ? `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}
+          </Text>
+          
+          {trend && (
+            <View style={tw`flex-row items-center`}>
+              <Icon 
+                name={trendDirection === 'up' ? 'arrow-up' : 'arrow-down'} 
+                size={14} 
+                color={isPositive ? (theme.mode === 'dark' ? '#4ade80' : '#16a34a') : (theme.mode === 'dark' ? '#f87171' : '#dc2626')} 
+                style={[tw`mr-1`, { transform: [{ rotate: trendDirection === 'up' ? '45deg' : '-45deg' }] }]}
+              />
+              <Text style={[tw`text-xs`, {color: isPositive ? (theme.mode === 'dark' ? '#4ade80' : '#16a34a') : (theme.mode === 'dark' ? '#f87171' : '#dc2626')}]}>
+                {trend}
+              </Text>
+            </View>
+          )}
+        </View>
+        
+        {/* Large background icon */}
+        <View style={tw`absolute right-0 -mr-2 opacity-5`}>
+            <Icon name={icon} size={100} color={theme.text} />
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const DashboardScreen = ({navigation}: any) => {
+  // ... existing hooks
+  const systemColorScheme = useColorScheme();
+  const {transactions, accounts, goals, addTransaction, settings} = useData();
+  
+  const activeThemeType = settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
+  // inject mode for inline conditionals
+  theme.mode = activeThemeType || 'light';
+
+  // ... existing calculations
+
+  // Refactor StatCard calls in render:
+  // ...
+
+  
+  const [pieMonthOffset, setPieMonthOffset] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // --- Calculations ---
+  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+
+  const getMonthlyTotal = (type: 'income' | 'expense', date: Date) => {
+    return transactions
+      .filter(
+        t =>
+          t.type === type &&
+          new Date(t.date).getMonth() === date.getMonth() &&
+          new Date(t.date).getFullYear() === date.getFullYear(),
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
+  };
+
+  const currentDate = new Date();
+  const prevDate = new Date();
+  prevDate.setMonth(currentDate.getMonth() - 1);
+
+  const monthlyIncome = getMonthlyTotal('income', currentDate);
+  const monthlyExpense = getMonthlyTotal('expense', currentDate);
+  const prevMonthlyIncome = getMonthlyTotal('income', prevDate);
+  const prevMonthlyExpense = getMonthlyTotal('expense', prevDate);
+
+  const calculateChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const incomeChange = calculateChange(monthlyIncome, prevMonthlyIncome);
+  const expenseChange = calculateChange(monthlyExpense, prevMonthlyExpense);
+
+  // Bar Chart Data
+  // Bar Chart Data (Gifted Charts Format)
+  const barChartData: any[] = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const label = d.toLocaleString('default', {month: 'short'}).substring(0, 3);
+    const inc = getMonthlyTotal('income', d);
+    const exp = getMonthlyTotal('expense', d);
+    
+    // Grouped bars: We push two objects per label. 
+    // First object has the label, second one doesn't (to group them visually under one label if we use spacing)
+    // Actually, gifted-charts handles grouped bars by just listing them sequentially with a spacing in between.
+    // To make them grouped per month, we can add spacing between the pair.
+    
+    barChartData.push({
+      value: inc,
+      frontColor: (theme as any).mode === 'dark' ? '#4ade80' : '#16a34a',
+      spacing: 6,
+      labelComponent: () => (
+        <View style={{width: 50, marginLeft: 6}}>
+          <Text style={{color: theme.textSecondary, fontSize: 10, textAlign: 'center'}} numberOfLines={1}>{label}</Text>
+        </View>
+      ),
+    });
+    barChartData.push({
+      value: exp,
+      frontColor: (theme as any).mode === 'dark' ? '#f87171' : '#dc2626',
+      spacing: 20, // larger spacing after the group
+    });
+  }
+
+  // Pie Chart Data
+  const pieDisplayDate = new Date();
+  pieDisplayDate.setMonth(pieDisplayDate.getMonth() + pieMonthOffset);
+
+  const pieChartData = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + pieMonthOffset);
+    
+    const monthlyExpenses = transactions.filter(
+      t =>
+        t.type === 'expense' &&
+        new Date(t.date).getMonth() === date.getMonth() &&
+        new Date(t.date).getFullYear() === date.getFullYear(),
+    );
+
+    const grouped: {[key: string]: number} = {};
+    monthlyExpenses.forEach(t => {
+      grouped[t.category] = (grouped[t.category] || 0) + t.amount;
+    });
+
+    const colors = [
+      '#8B5CF6', '#F97316', '#EF4444', '#84CC16', '#EC4899', '#3B82F6', '#EAB308',
+    ];
+    
+    let entries = Object.entries(grouped).map(([name, amount], index) => ({
+        name,
+        population: amount,
+        color: colors[index % colors.length],
+        legendFontColor: theme.textSecondary,
+        legendFontSize: 12,
+      })).sort((a, b) => b.population - a.population);
+
+    return entries;
+  }, [transactions, pieMonthOffset, theme.textSecondary]);
+
+  const totalExpenseForPie = pieChartData.reduce((acc, curr) => acc + curr.population, 0);
+
+  const handleSaveTransaction = (transactionData: Omit<Transaction, 'id'>) => {
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id: Date.now().toString(),
+    };
+    addTransaction(newTransaction);
+    setModalVisible(false);
+  };
+
+  return (
+    <SafeAreaView style={{flex: 1, backgroundColor: theme.background}}>
+      <ScrollView
+        style={[styles.container, {backgroundColor: theme.background}]}
+        contentContainerStyle={styles.contentContainer}>
+        
+        {/* Dashboard Title Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={[styles.headerTitle, {color: theme.text}]}>Dashboard</Text>
+            <Text style={[styles.headerSubtitle, {color: theme.textSecondary}]}>
+              Welcome back, here's your financial overview.
+            </Text>
+        </View>
+        </View>
+
+        {accounts.length === 0 ? (
+          <View style={[styles.emptyStateContainer, {borderColor: theme.border}]}>
+            <View style={[styles.iconCircle, {backgroundColor: `${theme.primary}20`}]}>
+              <Icon name="grid-outline" size={40} color={theme.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, {color: theme.text}]}>
+              Welcome to MoneyMate
+            </Text>
+            <Text style={[styles.emptySubtitle, {color: theme.textSecondary}]}>
+              Your personal finance dashboard is currently empty. Get started by adding your accounts, or load demo data to explore the features.
+            </Text>
+            
+            <TouchableOpacity
+              style={[styles.emptyButtonPrimary, {backgroundColor: theme.primary}]}
+              onPress={() => navigation.navigate('Accounts')}>
+              <Icon name="add" size={20} color="#FFF" />
+              <Text style={styles.emptyButtonTextPrimary}>Add Your First Account</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.emptyButtonSecondary, {borderColor: theme.border, backgroundColor: theme.card}]}
+              onPress={() => navigation.navigate('Settings')}>
+              <Text style={[styles.emptyButtonTextSecondary, {color: theme.text}]}>
+                Go to Settings for Demo Data
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+        {/* Vertical Stat Cards */}
+        <View style={styles.statsContainer}>
+          <StatCard
+            label="Total Balance"
+            value={totalBalance}
+            icon="wallet-outline"
+            color={theme.primary}
+            theme={theme}
+          />
+          <StatCard
+            label="Monthly Income"
+            value={monthlyIncome}
+            icon="trending-up-outline"
+            color={theme.income}
+            trend={`${Math.abs(incomeChange).toFixed(1)}% vs last month`}
+            trendDirection={incomeChange >= 0 ? 'up' : 'down'}
+            isPositive={incomeChange >= 0} 
+            theme={theme}
+          />
+          <StatCard
+            label="Monthly Expense"
+            value={monthlyExpense}
+            icon="trending-down-outline"
+            color={theme.expense}
+            trend={`${Math.abs(expenseChange).toFixed(1)}% vs last month`}
+            trendDirection={expenseChange >= 0 ? 'up' : 'down'}
+            isPositive={expenseChange < 0} 
+            theme={theme}
+          />
+        </View>
+
+
+          {/* Bar Chart */}
+          <View style={[styles.card, {backgroundColor: theme.card}]}>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20}}>
+                <Text style={[styles.cardTitle, {color: theme.text, marginBottom: 0}]}>
+                Income & Expense History
+                </Text>
+            </View>
+            
+          <BarChart
+            data={barChartData}
+            barWidth={16}
+            spacing={20}
+            roundedTop
+            roundedBottom={false}
+            hideRules
+            xAxisThickness={0}
+            yAxisThickness={0}
+            yAxisTextStyle={{color: theme.textSecondary, fontSize: 10}}
+            noOfSections={4}
+            maxValue={Math.max(...barChartData.map(d => d.value)) * 1.2} // 20% buffer
+            barBorderRadius={4}
+            isAnimated
+            animationDuration={500}
+            yAxisLabelPrefix="₹"
+            formatYLabel={(label) => {
+                const value = parseFloat(label);
+                if (value >= 100000) return (value / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+                if (value >= 1000) return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                return label;
+            }}
+            renderTooltip={(item: any) => {
+              return (
+                <View style={{
+                    marginBottom: 5,
+                    marginLeft: -10,
+                    backgroundColor: theme.card,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 4,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    elevation: 5,
+                    shadowColor: '#000',
+                    shadowOffset: {width: 0, height: 2},
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3.84,
+                }}>
+                  <Text style={{color: theme.text, fontSize: 10, fontWeight: 'bold'}}>
+                      ₹{item.value.toLocaleString('en-IN')}
+                  </Text>
+                </View>
+              );
+            }}
+          />
+          {/* Legend for Bar Chart */}
+          <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 15, gap: 20}}>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <View style={{width: 10, height: 10, borderRadius: 5, backgroundColor: (theme as any).mode === 'dark' ? '#4ade80' : '#16a34a', marginRight: 8}} />
+                  <Text style={{color: theme.textSecondary, fontSize: 12}}>Income</Text>
+              </View>
+               <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <View style={{width: 10, height: 10, borderRadius: 5, backgroundColor: (theme as any).mode === 'dark' ? '#f87171' : '#dc2626', marginRight: 8}} />
+                  <Text style={{color: theme.textSecondary, fontSize: 12}}>Expense</Text>
+              </View>
+          </View>
+        </View>
+
+
+        {/* Pie Chart (Donut) */}
+        <View style={[styles.card, {backgroundColor: theme.card}]}>
+          <View style={styles.chartHeader}>
+            <Text style={[styles.cardTitle, {color: theme.text}]}>
+              Expense Breakdown
+            </Text>
+            <View style={styles.monthSelector}>
+                <TouchableOpacity onPress={() => setPieMonthOffset(p => p - 1)}>
+                <Icon name="chevron-back" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+                <Text style={[styles.monthText, {color: theme.text}]}>
+                {pieDisplayDate.toLocaleString('default', {
+                    month: 'long',
+                    year: 'numeric',
+                })}
+                </Text>
+                <TouchableOpacity onPress={() => setPieMonthOffset(p => p + 1)}>
+                <Icon name="chevron-forward" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+            </View>
+          </View>
+          
+          <View style={{alignItems: 'center', justifyContent: 'center'}}>
+            {pieChartData.length > 0 ? (
+                <>
+                <PieChart
+                data={pieChartData}
+                width={screenWidth - 60}
+                height={220}
+                chartConfig={{
+                    color: (_opacity = 1) => theme.text,
+                }}
+                accessor={'population'}
+                backgroundColor={'transparent'}
+                paddingLeft={'0'} 
+                center={[screenWidth / 4 - 30, 0]} 
+                absolute={false}
+                hasLegend={false}
+                />
+                
+                {/* Center Text for Donut */}
+                <View style={styles.donutCenter}>
+                    <Text style={[styles.donutLabel, {color: theme.textSecondary}]}>TOTAL</Text>
+                    <Text style={[styles.donutValue, {color: theme.text}]}>
+                        ₹{totalExpenseForPie.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </Text>
+                </View>
+
+                {/* Custom Legend */}
+                <View style={styles.legendContainer}>
+                    {pieChartData.map((item, index) => (
+                        <View key={index} style={styles.legendItem}>
+                             <View style={styles.legendLeft}>
+                                <View style={[styles.legendDot, {backgroundColor: item.color}]} />
+                                <Text style={[styles.legendName, {color: theme.textSecondary}]}>{item.name}</Text>
+                             </View>
+                             <View style={styles.legendRight}>
+                                <Text style={[styles.legendPercent, {color: theme.textSecondary, backgroundColor: theme.border}]}>
+                                    {((item.population / totalExpenseForPie) * 100).toFixed(1)}%
+                                </Text>
+                                <Text style={[styles.legendAmount, {color: theme.text}]}>
+                                    ₹{item.population.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                             </View>
+                        </View>
+                    ))}
+                </View>
+                </>
+            ) : (
+                <View style={styles.noDataContainer}>
+                    <Text style={{color: theme.textSecondary}}>No expenses for this month</Text>
+                </View>
+            )}
+          </View>
+        </View>
+
+        {/* Top Savings Goals */}
+        <View style={[styles.card, {backgroundColor: theme.card}]}>
+          <Text style={[styles.cardTitle, {color: theme.text}]}>
+            Top Savings Goals
+          </Text>
+          {goals.slice(0, 3).map(goal => {
+              const progress = goal.targetAmount > 0 ? Math.min((goal.currentAmount / goal.targetAmount), 1) : 0;
+              const percent = Math.round(progress * 100);
+              return (
+                  <View key={goal.id} style={styles.goalItem}>
+                      <View style={styles.goalHeader}>
+                          <Text style={[styles.goalName, {color: theme.text}]}>{goal.name}</Text>
+                          <View style={styles.goalRightHeader}>
+                             <Text style={[styles.goalPercentBadge, {color: theme.primary, backgroundColor: `${theme.primary}20`}]}>{percent}%</Text>
+                             <TouchableOpacity style={[styles.miniAddButton, {backgroundColor: theme.border}]}>
+                                 <Icon name="add" size={14} color={theme.text} />
+                             </TouchableOpacity>
+                          </View>
+                      </View>
+                      <Text style={[styles.goalAmountText, {color: theme.textSecondary}]}>
+                          ₹{goal.currentAmount.toLocaleString()} <Text style={{fontSize: 12}}>of ₹{goal.targetAmount.toLocaleString()}</Text>
+                      </Text>
+                      <View style={[styles.progressBarBg, {backgroundColor: theme.border}]}>
+                          <View style={[styles.progressBarFill, {backgroundColor: theme.primary, width: `${percent}%`}]} />
+                      </View>
+                  </View>
+              );
+          })}
+          {goals.length === 0 && (
+              <Text style={styles.noGoalsText}>No savings goals yet.</Text>
+          )}
+        </View>
+      </>
+        )}
+      </ScrollView>
+
+      {/* FAB - Only show if we have accounts, or maybe always? The empty state has a button. Let's hide FAB if empty state is evident to avoid clutter. */}
+      {accounts.length > 0 && (
+      <TouchableOpacity
+        style={[styles.fab, {backgroundColor: theme.primary, shadowColor: theme.primary}]}
+        onPress={() => setModalVisible(true)}
+      >
+        <Icon name="add" size={32} color="#FFF" />
+      </TouchableOpacity>
+      )}
+      
+      {/* Add Transaction Modal */}
+      <AddTransactionModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSave={handleSaveTransaction}
+        accounts={accounts}
+      />
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+      paddingBottom: 100, 
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  statsContainer: {
+    paddingHorizontal: 20,
+    gap: 15,
+    marginBottom: 20,
+  },
+  statCard: {
+    padding: 20,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    height: 140, 
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  statCardContent: {
+      flex: 1,
+      justifyContent: 'space-between',
+  },
+  bgIconContainer: {
+      position: 'absolute',
+      right: -10,
+      top: -10,
+      zIndex: -1,
+  },
+  iconBox: {
+      width: 40, 
+      height: 40,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 10,
+  },
+  statLabel: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  card: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 20,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
+    paddingRight: 0, 
+  },
+  chartHeader: {
+    flexDirection: 'column', 
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  monthSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    backgroundColor: '#00000010', 
+    padding: 8,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  donutCenter: {
+      position: 'absolute',
+      top: 90, 
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'none',
+  },
+  donutLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      letterSpacing: 1,
+  },
+  donutValue: {
+      fontSize: 20,
+      fontWeight: 'bold',
+  },
+  noDataContainer: {
+      height: 200,
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  legendContainer: {
+      marginTop: 20,
+      width: '100%',
+  },
+  legendItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+  },
+  legendLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+  },
+  legendDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+  },
+  legendName: {
+      fontSize: 14,
+      fontWeight: '500',
+  },
+  legendRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+  },
+  legendPercent: {
+      fontSize: 12,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+      overflow: 'hidden',
+  },
+  legendAmount: {
+      fontSize: 14,
+      fontWeight: '600',
+      width: 80,
+      textAlign: 'right',
+  },
+  goalItem: {
+      marginBottom: 20,
+      padding: 15,
+      borderWidth: 1,
+      borderColor: '#33333320',
+      borderRadius: 12,
+  },
+  goalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 5,
+  },
+  goalRightHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+  },
+  goalName: {
+      fontWeight: '600',
+      fontSize: 16,
+  },
+  goalPercentBadge: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      overflow: 'hidden',
+  },
+  miniAddButton: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  goalAmountText: {
+      fontSize: 14,
+      marginBottom: 10,
+  },
+  progressBarBg: {
+      height: 8,
+      borderRadius: 4,
+      overflow: 'hidden',
+  },
+  progressBarFill: {
+      height: '100%',
+      borderRadius: 4,
+  },
+  noGoalsText: {
+      textAlign: 'center',
+      padding: 10,
+      color: '#888',
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 30, // Above tab bar usually
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  // Empty State Styles
+  emptyStateContainer: {
+    margin: 20,
+    padding: 30,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 30,
+    paddingHorizontal: 10,
+  },
+  emptyButtonPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    marginBottom: 15,
+    width: '100%',
+    gap: 8,
+  },
+  emptyButtonTextPrimary: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyButtonSecondary: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    borderWidth: 1,
+    width: '100%',
+  },
+  emptyButtonTextSecondary: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});
+
+export default DashboardScreen;
