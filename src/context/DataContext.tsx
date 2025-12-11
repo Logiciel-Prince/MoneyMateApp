@@ -96,6 +96,26 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const addTransaction = (transaction: Transaction) => {
     setTransactions(prev => [...prev, transaction]);
+
+    // Update account balances
+    setAccounts(prevAccounts => {
+      const { type, amount, accountId, toAccountId } = transaction;
+      return prevAccounts.map(acc => {
+        if (acc.id === accountId) {
+          if (type === 'income') {
+            return { ...acc, balance: acc.balance + amount };
+          } else if (type === 'expense') {
+            return { ...acc, balance: acc.balance - amount };
+          } else if (type === 'transfer') {
+            return { ...acc, balance: acc.balance - amount };
+          }
+        }
+        if (type === 'transfer' && toAccountId && acc.id === toAccountId) {
+          return { ...acc, balance: acc.balance + amount };
+        }
+        return acc;
+      });
+    });
   };
 
   const updateTransaction = (id: string, updates: Partial<Transaction>) => {

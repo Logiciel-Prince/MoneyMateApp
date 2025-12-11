@@ -9,11 +9,13 @@ export enum AccountType {
 export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
+  TRANSFER = 'transfer',
 }
 
 export enum CategoryType {
   INCOME = 'income',
   EXPENSE = 'expense',
+  TRANSFER = 'transfer',
 }
 
 export enum RecurringFrequency {
@@ -40,12 +42,13 @@ export interface SavingsGoal extends Goal {
 // Existing interfaces
 export interface Transaction {
   id: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   amount: number;
   category: string;
   description: string; // mapped from 'note'
   date: string;
   accountId: string; // mapped from 'account_id'
+  toAccountId?: string; // Destination account for transfers
   categoryId?: string; // Optional for new data model
 }
 
