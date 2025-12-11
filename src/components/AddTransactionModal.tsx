@@ -10,6 +10,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { BlurView } from '@react-native-community/blur';
 import { Dropdown } from 'react-native-element-dropdown';
 import { lightTheme, darkTheme } from '../theme';
 import { Transaction, CategoryType } from '../types';
@@ -145,6 +146,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType={activeThemeType === 'dark' ? 'dark' : 'light'}
+          blurAmount={0.5}
+          reducedTransparencyFallbackColor="white"
+        />
         <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>
@@ -519,7 +526,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {

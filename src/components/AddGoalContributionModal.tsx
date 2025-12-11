@@ -10,8 +10,9 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import {lightTheme, darkTheme} from '../theme';
-import {Goal, Account} from '../types';
+import { BlurView } from '@react-native-community/blur';
+import { lightTheme, darkTheme } from '../theme';
+import { Goal, Account } from '../types';
 import { useData } from '../context/DataContext';
 
 interface AddGoalContributionModalProps {
@@ -82,6 +83,12 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType={activeThemeType === 'dark' ? 'dark' : 'light'}
+          blurAmount={2}
+          reducedTransparencyFallbackColor="white"
+        />
         <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
           <Text style={[styles.modalTitle, { color: theme.text }]}>
             Add to "{goal.name}"
@@ -182,7 +189,6 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     padding: 20,
   },
@@ -190,7 +196,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 5,
@@ -214,26 +220,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   helperText: {
-      fontSize: 12,
-      marginBottom: 20,
+    fontSize: 12,
+    marginBottom: 20,
   },
   accountSelection: {
-      marginBottom: 20,
+    marginBottom: 20,
   },
   accountChips: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   accountChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   accountChipText: {
-      fontSize: 12,
-      fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',

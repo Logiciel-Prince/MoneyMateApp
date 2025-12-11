@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { BlurView } from '@react-native-community/blur';
 import { lightTheme, darkTheme } from '../theme';
 import { Account } from '../types';
 import { useData } from '../context/DataContext';
@@ -71,6 +72,12 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType={activeThemeType === 'dark' ? 'dark' : 'light'}
+          blurAmount={2}
+          reducedTransparencyFallbackColor="white"
+        />
         <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>
@@ -220,7 +227,6 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
