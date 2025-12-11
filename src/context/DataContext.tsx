@@ -1,13 +1,22 @@
 import React, {createContext, useContext, useState, useEffect, useCallback, ReactNode} from 'react';
-import {Transaction, Account, Budget, Goal, Settings, AppData} from '../types';
-import {loadData, saveData, clearData} from '../utils/storage';
-import {generateDemoData} from '../utils/demoData';
+import {
+  Transaction,
+  Account,
+  Budget,
+  Goal,
+  Settings,
+  AppData,
+  Category,
+} from '../types';
+import { loadData, saveData, clearData } from '../utils/storage';
+import { generateDemoData } from '../utils/demoData';
 
 interface DataContextType {
   transactions: Transaction[];
   accounts: Account[];
   budgets: Budget[];
   goals: Goal[];
+  categories: Category[];
   settings: Settings;
   addTransaction: (transaction: Transaction) => void;
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
@@ -21,9 +30,14 @@ interface DataContextType {
   addGoal: (goal: Goal) => void;
   updateGoal: (id: string, goal: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
+  addCategory: (category: Category) => void;
+  updateCategory: (id: string, category: Partial<Category>) => void;
+  deleteCategory: (id: string) => void;
   updateSettings: (settings: Partial<Settings>) => void;
   loadDemoData: () => void;
-  clearAllData: () => void;
+  clearAllData: () => Promise<void>;
+  exportData: () => Promise<string>;
+  importData: (jsonString: string) => Promise<boolean>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -34,20 +48,13 @@ const defaultSettings: Settings = {
   language: 'en',
 };
 
-export const DataProvider = ({children}: {children: ReactNode}) => {
+export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    saveCurrentData();
-  }, [transactions, accounts, budgets, goals, settings]);
 
   const loadInitialData = async () => {
     const data = await loadData();
@@ -57,6 +64,9 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
       setBudgets(data.budgets);
       setGoals(data.goals);
       setSettings(data.settings);
+      if (data.categories) {
+        setCategories(data.categories);
+      }
     }
   };
 
@@ -67,9 +77,22 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
       budgets,
       goals,
       settings,
+      categories,
     };
     await saveData(data);
-  }, [transactions, accounts, budgets, goals, settings]);
+  }, [transactions, accounts, budgets, goals, settings, categories]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    // Debounce save or save on every change
+    const timer = setTimeout(() => {
+      saveCurrentData();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [saveCurrentData]);
 
   const addTransaction = (transaction: Transaction) => {
     setTransactions(prev => [...prev, transaction]);
@@ -77,7 +100,7 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
 
   const updateTransaction = (id: string, updates: Partial<Transaction>) => {
     setTransactions(prev =>
-      prev.map(t => (t.id === id ? {...t, ...updates} : t)),
+      prev.map(t => (t.id === id ? { ...t, ...updates } : t)),
     );
   };
 
@@ -90,7 +113,9 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
   };
 
   const updateAccount = (id: string, updates: Partial<Account>) => {
-    setAccounts(prev => prev.map(a => (a.id === id ? {...a, ...updates} : a)));
+    setAccounts(prev =>
+      prev.map(a => (a.id === id ? { ...a, ...updates } : a)),
+    );
   };
 
   const deleteAccount = (id: string) => {
@@ -102,7 +127,7 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
   };
 
   const updateBudget = (id: string, updates: Partial<Budget>) => {
-    setBudgets(prev => prev.map(b => (b.id === id ? {...b, ...updates} : b)));
+    setBudgets(prev => prev.map(b => (b.id === id ? { ...b, ...updates } : b)));
   };
 
   const deleteBudget = (id: string) => {
@@ -114,15 +139,29 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
   };
 
   const updateGoal = (id: string, updates: Partial<Goal>) => {
-    setGoals(prev => prev.map(g => (g.id === id ? {...g, ...updates} : g)));
+    setGoals(prev => prev.map(g => (g.id === id ? { ...g, ...updates } : g)));
   };
 
   const deleteGoal = (id: string) => {
     setGoals(prev => prev.filter(g => g.id !== id));
   };
 
+  const addCategory = (category: Category) => {
+    setCategories(prev => [...prev, category]);
+  };
+
+  const updateCategory = (id: string, updates: Partial<Category>) => {
+    setCategories(prev =>
+      prev.map(c => (c.id === id ? { ...c, ...updates } : c)),
+    );
+  };
+
+  const deleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
   const updateSettings = (updates: Partial<Settings>) => {
-    setSettings(prev => ({...prev, ...updates}));
+    setSettings(prev => ({ ...prev, ...updates }));
   };
 
   const loadDemoData = useCallback(() => {
@@ -131,25 +170,57 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
     setAccounts(data.accounts);
     setBudgets(data.budgets);
     setGoals(data.goals);
-    // Persist immediately
-    const appData: AppData = {
-        transactions: data.transactions,
-        accounts: data.accounts,
-        budgets: data.budgets,
-        goals: data.goals,
-        settings: settings,
-        categories: data.categories
-    };
-    saveData(appData);
-  }, [settings]);
+    setSettings(data.settings);
+    if (data.categories) {
+      setCategories(data.categories);
+    }
+  }, []); // Removed [settings] dependency to avoid stale settings if not needed
 
   const clearAllData = async () => {
     setTransactions([]);
     setAccounts([]);
     setBudgets([]);
     setGoals([]);
+    setCategories([]);
+    // Do not reset settings to default, users usually prefer to keep theme/currency
     // setSettings(defaultSettings);
     await clearData();
+  };
+
+  const exportData = async (): Promise<string> => {
+    const data: AppData = {
+      transactions,
+      accounts,
+      budgets,
+      goals,
+      settings,
+      categories,
+    };
+    return JSON.stringify(data, null, 2);
+  };
+
+  const importData = async (jsonString: string): Promise<boolean> => {
+    try {
+      const data = JSON.parse(jsonString) as AppData;
+      // Basic validation
+      if (!Array.isArray(data.transactions) || !Array.isArray(data.accounts)) {
+        return false;
+      }
+
+      setTransactions(data.transactions);
+      setAccounts(data.accounts);
+      setBudgets(data.budgets || []);
+      setGoals(data.goals || []);
+      if (data.settings) setSettings(data.settings);
+      if (data.categories) setCategories(data.categories);
+
+      // Save immediately
+      await saveData(data);
+      return true;
+    } catch (e) {
+      console.error('Import failed', e);
+      return false;
+    }
   };
 
   return (
@@ -159,6 +230,7 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
         accounts,
         budgets,
         goals,
+        categories,
         settings,
         addTransaction,
         updateTransaction,
@@ -172,10 +244,16 @@ export const DataProvider = ({children}: {children: ReactNode}) => {
         addGoal,
         updateGoal,
         deleteGoal,
+        addCategory,
+        updateCategory,
+        deleteCategory,
         updateSettings,
         loadDemoData,
         clearAllData,
-      }}>
+        exportData,
+        importData,
+      }}
+    >
       {children}
     </DataContext.Provider>
   );
@@ -188,3 +266,4 @@ export const useData = () => {
   }
   return context;
 };
+
