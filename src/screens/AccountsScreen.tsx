@@ -13,11 +13,14 @@ import {useData} from '../context/DataContext';
 import {lightTheme, darkTheme} from '../theme';
 import {Account} from '../types';
 import AddAccountModal from '../components/AddAccountModal';
+import { formatCurrency } from '../utils/currency';
 
 const AccountsScreen = () => {
   const systemColorScheme = useColorScheme();
-  const {accounts, addAccount, updateAccount, deleteAccount, settings} = useData();
-  const activeThemeType = settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const { accounts, addAccount, updateAccount, deleteAccount, settings } =
+    useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -50,7 +53,7 @@ const AccountsScreen = () => {
       'Delete Account',
       'Are you sure you want to delete this account? All associated transactions will remain.',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -75,23 +78,29 @@ const AccountsScreen = () => {
     }
   };
 
-  const renderAccount = ({item}: {item: Account}) => (
+  const renderAccount = ({ item }: { item: Account }) => (
     <TouchableOpacity
-      style={[styles.accountCard, {backgroundColor: theme.card}]}
-      onLongPress={() => handleEdit(item)}>
+      style={[styles.accountCard, { backgroundColor: theme.card }]}
+      onLongPress={() => handleEdit(item)}
+    >
       <View style={styles.accountLeft}>
         <View
           style={[
             styles.iconContainer,
-            {backgroundColor: theme.primary + '20'},
-          ]}>
-          <Icon name={getAccountIcon(item.type)} size={24} color={theme.primary} />
+            { backgroundColor: theme.primary + '20' },
+          ]}
+        >
+          <Icon
+            name={getAccountIcon(item.type)}
+            size={24}
+            color={theme.primary}
+          />
         </View>
         <View>
-          <Text style={[styles.accountName, {color: theme.text}]}>
+          <Text style={[styles.accountName, { color: theme.text }]}>
             {item.name}
           </Text>
-          <Text style={[styles.accountType, {color: theme.textSecondary}]}>
+          <Text style={[styles.accountType, { color: theme.textSecondary }]}>
             {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
           </Text>
         </View>
@@ -100,13 +109,15 @@ const AccountsScreen = () => {
         <Text
           style={[
             styles.balance,
-            {color: item.balance >= 0 ? theme.income : theme.expense},
-          ]}>
-          ${item.balance.toFixed(2)}
+            { color: item.balance >= 0 ? theme.income : theme.expense },
+          ]}
+        >
+          {formatCurrency(item.balance, settings.currency)}
         </Text>
         <TouchableOpacity
           onPress={() => handleDelete(item.id)}
-          style={styles.deleteButton}>
+          style={styles.deleteButton}
+        >
           <Icon name="trash-outline" size={20} color={theme.danger} />
         </TouchableOpacity>
       </View>
@@ -114,12 +125,14 @@ const AccountsScreen = () => {
   );
 
   return (
-    <View style={[styles.container, {backgroundColor: theme.background}]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Total Balance Card */}
       {accounts.length > 0 && (
-        <View style={[styles.totalCard, {backgroundColor: theme.primary}]}>
+        <View style={[styles.totalCard, { backgroundColor: theme.primary }]}>
           <Text style={styles.totalLabel}>Total Balance</Text>
-          <Text style={styles.totalAmount}>${totalBalance.toFixed(2)}</Text>
+          <Text style={styles.totalAmount}>
+            {formatCurrency(totalBalance, settings.currency)}
+          </Text>
           <Text style={styles.totalAccounts}>
             {accounts.length} {accounts.length === 1 ? 'Account' : 'Accounts'}
           </Text>
@@ -134,10 +147,10 @@ const AccountsScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="wallet-outline" size={64} color={theme.textSecondary} />
-            <Text style={[styles.emptyText, {color: theme.textSecondary}]}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               No accounts yet
             </Text>
-            <Text style={[styles.emptySubtext, {color: theme.textSecondary}]}>
+            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
               Tap the + button to add your first account
             </Text>
           </View>
@@ -146,11 +159,12 @@ const AccountsScreen = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={[styles.fab, {backgroundColor: theme.primary}]}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={() => {
           setEditingAccount(undefined);
           setModalVisible(true);
-        }}>
+        }}
+      >
         <Icon name="add" size={28} color="#FFF" />
       </TouchableOpacity>
 

@@ -16,6 +16,11 @@ import { lightTheme, darkTheme } from '../theme';
 import AddTransactionModal from '../components/AddTransactionModal';
 import { Transaction, Goal } from '../types';
 import AddGoalContributionModal from '../components/AddGoalContributionModal';
+import {
+  formatCurrency,
+  getCurrencySymbol,
+  formatCurrencyCompact,
+} from '../utils/currency';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -32,6 +37,7 @@ interface StatCardProps {
   trend?: string; // Text like "4.2% vs last month"
   trendDirection?: 'up' | 'down';
   isPositive?: boolean;
+  currencyCode?: string;
 }
 
 const StatCard = ({
@@ -43,6 +49,7 @@ const StatCard = ({
   trend,
   trendDirection,
   isPositive,
+  currencyCode = 'USD',
 }: StatCardProps) => {
   // Resolve color: if it's a tailwind class, use tw, else use as is
   const iconColorStyle =
@@ -87,10 +94,7 @@ const StatCard = ({
           </Text>
           <Text style={[tw`text-2xl font-bold mb-1`, { color: theme.text }]}>
             {typeof value === 'number'
-              ? `₹${value.toLocaleString('en-IN', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`
+              ? formatCurrency(value, currencyCode)
               : value}
           </Text>
 
@@ -432,6 +436,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 icon="wallet-outline"
                 color={theme.primary}
                 theme={theme}
+                currencyCode={settings.currency}
               />
               <StatCard
                 label="Monthly Income"
@@ -442,6 +447,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 trendDirection={incomeChange >= 0 ? 'up' : 'down'}
                 isPositive={incomeChange >= 0}
                 theme={theme}
+                currencyCode={settings.currency}
               />
               <StatCard
                 label="Monthly Expense"
@@ -452,6 +458,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 trendDirection={expenseChange >= 0 ? 'up' : 'down'}
                 isPositive={expenseChange < 0}
                 theme={theme}
+                currencyCode={settings.currency}
               />
             </View>
 
@@ -490,7 +497,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 barBorderRadius={4}
                 isAnimated
                 animationDuration={500}
-                yAxisLabelPrefix="₹"
+                yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
                 formatYLabel={label => {
                   const value = parseFloat(label);
                   if (value >= 100000)
@@ -527,7 +534,9 @@ const DashboardScreen = ({ navigation }: any) => {
                           fontWeight: 'bold',
                         }}
                       >
-                        ₹{item.value.toLocaleString('en-IN')}
+                        {formatCurrency(item.value, settings.currency, {
+                          maximumFractionDigits: 0,
+                        })}
                       </Text>
                     </View>
                   );
@@ -678,10 +687,13 @@ const DashboardScreen = ({ navigation }: any) => {
                                 fontWeight: 'bold',
                               }}
                             >
-                              ₹
-                              {totalExpenseForPie.toLocaleString('en-IN', {
-                                maximumFractionDigits: 0,
-                              })}
+                              {formatCurrency(
+                                totalExpenseForPie,
+                                settings.currency,
+                                {
+                                  maximumFractionDigits: 0,
+                                },
+                              )}
                             </Text>
                           </View>
                         );
@@ -753,11 +765,7 @@ const DashboardScreen = ({ navigation }: any) => {
                                   { color: theme.text },
                                 ]}
                               >
-                                ₹
-                                {item.value.toLocaleString('en-IN', {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
+                                {formatCurrency(item.value, settings.currency)}
                               </Text>
                             </View>
                           </View>
@@ -882,18 +890,13 @@ const DashboardScreen = ({ navigation }: any) => {
                           color: theme.textSecondary,
                         }}
                       >
-                        ₹
-                        {goal.currentAmount.toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
-                        })}
+                        {formatCurrency(goal.currentAmount, settings.currency)}
                       </Text>
                       <Text
                         style={{ fontSize: 12, color: theme.textSecondary }}
                       >
-                        of ₹
-                        {goal.targetAmount.toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
-                        })}
+                        of{' '}
+                        {formatCurrency(goal.targetAmount, settings.currency)}
                       </Text>
                     </View>
 

@@ -13,6 +13,7 @@ import {useData} from '../context/DataContext';
 import {lightTheme, darkTheme} from '../theme';
 import {Transaction} from '../types';
 import AddTransactionModal from '../components/AddTransactionModal';
+import { formatCurrency } from '../utils/currency';
 
 const TransactionsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -25,16 +26,16 @@ const TransactionsScreen = () => {
     settings,
   } = useData();
 
-  const activeThemeType = settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingTransaction, setEditingTransaction] =
-    useState<Transaction | undefined>(undefined);
+  const [editingTransaction, setEditingTransaction] = useState<
+    Transaction | undefined
+  >(undefined);
 
-  const handleAddTransaction = (
-    transactionData: Omit<Transaction, 'id'>,
-  ) => {
+  const handleAddTransaction = (transactionData: Omit<Transaction, 'id'>) => {
     if (editingTransaction) {
       updateTransaction(editingTransaction.id, transactionData);
     } else {
@@ -57,7 +58,7 @@ const TransactionsScreen = () => {
       'Delete Transaction',
       'Are you sure you want to delete this transaction?',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -67,18 +68,19 @@ const TransactionsScreen = () => {
     );
   };
 
-  const renderTransaction = ({item}: {item: Transaction}) => (
+  const renderTransaction = ({ item }: { item: Transaction }) => (
     <TouchableOpacity
       style={[
         styles.transactionCard,
-        {backgroundColor: theme.card, borderColor: theme.border},
+        { backgroundColor: theme.card, borderColor: theme.border },
       ]}
-      onLongPress={() => handleEdit(item)}>
+      onLongPress={() => handleEdit(item)}
+    >
       <View style={styles.transactionLeft}>
-        <Text style={[styles.description, {color: theme.text}]}>
+        <Text style={[styles.description, { color: theme.text }]}>
           {item.description}
         </Text>
-        <Text style={[styles.category, {color: theme.textSecondary}]}>
+        <Text style={[styles.category, { color: theme.textSecondary }]}>
           {item.category} • {new Date(item.date).toLocaleDateString()}
         </Text>
       </View>
@@ -86,13 +88,18 @@ const TransactionsScreen = () => {
         <Text
           style={[
             styles.amount,
-            {color: item.type === 'income' ? theme.income : theme.expense},
-          ]}>
-          {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
+            { color: item.type === 'income' ? theme.income : theme.expense },
+          ]}
+        >
+          {item.type === 'income' ? '+' : '-'}
+          {formatCurrency(item.amount, settings.currency, {
+            showSymbol: false,
+          })}
         </Text>
         <TouchableOpacity
           onPress={() => handleDelete(item.id)}
-          style={styles.deleteButton}>
+          style={styles.deleteButton}
+        >
           <Icon name="trash-outline" size={20} color={theme.danger} />
         </TouchableOpacity>
       </View>
@@ -100,7 +107,7 @@ const TransactionsScreen = () => {
   );
 
   return (
-    <View style={[styles.container, {backgroundColor: theme.background}]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={transactions.sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
@@ -115,10 +122,10 @@ const TransactionsScreen = () => {
               size={64}
               color={theme.textSecondary}
             />
-            <Text style={[styles.emptyText, {color: theme.textSecondary}]}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               No transactions yet
             </Text>
-            <Text style={[styles.emptySubtext, {color: theme.textSecondary}]}>
+            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
               Tap the + button to add your first transaction
             </Text>
           </View>
@@ -127,11 +134,12 @@ const TransactionsScreen = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={[styles.fab, {backgroundColor: theme.primary}]}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={() => {
           setEditingTransaction(undefined);
           setModalVisible(true);
-        }}>
+        }}
+      >
         <Icon name="add" size={28} color="#FFF" />
       </TouchableOpacity>
 
