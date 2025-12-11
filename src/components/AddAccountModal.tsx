@@ -7,9 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
   useColorScheme,
+  ScrollView,
 } from 'react-native';
-import {lightTheme, darkTheme} from '../theme';
-import {Account} from '../types';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { lightTheme, darkTheme } from '../theme';
+import { Account } from '../types';
 import { useData } from '../context/DataContext';
 
 interface AddAccountModalProps {
@@ -19,9 +21,9 @@ interface AddAccountModalProps {
   editAccount?: Account;
 }
 
-const ACCOUNT_TYPES: Array<'checking' | 'savings' | 'credit' | 'cash'> = [
-  'checking',
-  'savings',
+const ACCOUNT_TYPES: Array<'bank' | 'wallet' | 'credit' | 'cash'> = [
+  'bank',
+  'wallet',
   'credit',
   'cash',
 ];
@@ -39,13 +41,12 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [name, setName] = useState(editAccount?.name || '');
-  const [type, setType] = useState<'checking' | 'savings' | 'credit' | 'cash'>(
-    editAccount?.type || 'checking',
+  const [type, setType] = useState<'bank' | 'wallet' | 'credit' | 'cash'>(
+    editAccount?.type || 'bank',
   );
   const [balance, setBalance] = useState(
     editAccount?.balance.toString() || '0',
   );
-  const [currency, setCurrency] = useState(editAccount?.currency || 'USD');
 
   const handleSave = () => {
     if (!name || !balance) {
@@ -56,14 +57,14 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
       name,
       type,
       balance: parseFloat(balance),
-      currency,
+      currency: settings.currency, // Use settings currency
     });
 
     // Reset form
     setName('');
-    setType('checking');
+    setType('bank');
     setBalance('0');
-    setCurrency('USD');
+    // Currency is derived from settings, no state needed
     onClose();
   };
 
@@ -71,106 +72,143 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>
-            {editAccount ? 'Edit Account' : 'Add Account'}
-          </Text>
-
-          {/* Account Name */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Account Name
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="e.g., Main Checking"
-            placeholderTextColor={theme.textSecondary}
-            value={name}
-            onChangeText={setName}
-          />
-
-          {/* Account Type */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Account Type
-          </Text>
-          <View style={styles.typeContainer}>
-            {ACCOUNT_TYPES.map(accountType => (
-              <TouchableOpacity
-                key={accountType}
-                style={[
-                  styles.typeChip,
-                  type === accountType && { backgroundColor: theme.primary },
-                  { borderColor: theme.border },
-                ]}
-                onPress={() => setType(accountType)}
-              >
-                <Text
-                  style={[
-                    styles.typeText,
-                    { color: type === accountType ? '#FFF' : theme.text },
-                  ]}
-                >
-                  {accountType.charAt(0).toUpperCase() + accountType.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {editAccount ? 'Edit Account' : 'Add Account'}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={24} color={theme.textSecondary} />
+            </TouchableOpacity>
           </View>
 
-          {/* Initial Balance */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            {editAccount ? 'Current Balance' : 'Initial Balance'}
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="0.00"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="decimal-pad"
-            value={balance}
-            onChangeText={setBalance}
-          />
+          <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+            {/* Account Name */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Account Name
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="pricetag-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="e.g., Main Checking"
+                placeholderTextColor={theme.textSecondary}
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
 
-          {/* Currency */}
-          <Text style={[styles.label, { color: theme.text }]}>Currency</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="USD"
-            placeholderTextColor={theme.textSecondary}
-            value={currency}
-            onChangeText={setCurrency}
-          />
+            {/* Account Type */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Account Type
+            </Text>
+            <View style={styles.typeContainer}>
+              {ACCOUNT_TYPES.map(accountType => (
+                <TouchableOpacity
+                  key={accountType}
+                  style={[
+                    styles.typeButton,
+                    { borderColor: theme.border },
+                    type === accountType && {
+                      backgroundColor: theme.primary,
+                      borderColor: theme.primary,
+                    },
+                  ]}
+                  onPress={() => setType(accountType)}
+                >
+                  <Text
+                    style={[
+                      styles.typeText,
+                      { color: type === accountType ? '#FFF' : theme.text },
+                    ]}
+                  >
+                    {accountType.charAt(0).toUpperCase() + accountType.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Initial Balance */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {editAccount ? 'Current Balance' : 'Initial Balance'}
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="cash-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="0.00"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="decimal-pad"
+                value={balance}
+                onChangeText={text => {
+                  // Filter out any non-numeric and non-decimal characters
+                  const cleaned = text.replace(/[^0-9.]/g, '');
+
+                  // Handle multiple decimals: keep only the first one
+                  const parts = cleaned.split('.');
+                  if (parts.length > 2) {
+                    setBalance(parts[0] + '.' + parts.slice(1).join(''));
+                  } else {
+                    setBalance(cleaned);
+                  }
+                }}
+              />
+            </View>
+
+            {/* Currency Input Removed - using default settings.currency */}
+          </ScrollView>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              style={[
+                styles.button,
+                styles.cancelButton,
+                {
+                  borderColor: theme.border,
+                  backgroundColor: theme.background,
+                },
+              ]}
               onPress={onClose}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: theme.text }]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.primary }]}
+              style={[
+                styles.button,
+                styles.saveButton,
+                { backgroundColor: theme.primary },
+              ]}
               onPress={handleSave}
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={[styles.buttonText, { color: '#FFF' }]}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -182,61 +220,98 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  form: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginTop: 15,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 1.5,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    flex: 1,
     fontSize: 16,
+    padding: 0,
   },
   typeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
-  typeChip: {
+  typeButton: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
   },
   typeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    gap: 12,
+    paddingTop: 8,
   },
   button: {
     flex: 1,
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
+  cancelButton: {
+    borderWidth: 1.5,
+  },
+  saveButton: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
   buttonText: {
-    color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 

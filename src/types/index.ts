@@ -55,7 +55,7 @@ export interface Transaction {
 export interface Account {
   id: string;
   name: string;
-  type: 'checking' | 'savings' | 'credit' | 'cash';
+  type: 'bank' | 'wallet' | 'credit' | 'cash';
   balance: number;
   currency: string;
   is_active?: boolean;

@@ -65,12 +65,12 @@ const AccountsScreen = () => {
 
   const getAccountIcon = (type: string) => {
     switch (type) {
-      case 'checking':
-        return 'card-outline';
-      case 'savings':
+      case 'bank':
+        return 'business-outline';
+      case 'wallet':
         return 'wallet-outline';
       case 'credit':
-        return 'card';
+        return 'card-outline';
       case 'cash':
         return 'cash-outline';
       default:
