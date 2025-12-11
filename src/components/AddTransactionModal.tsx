@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import {lightTheme, darkTheme} from '../theme';
 import {Transaction} from '../types';
+import { useData } from '../context/DataContext';
 
 interface AddTransactionModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: (transaction: Omit<Transaction, 'id'>) => void;
-  accounts: Array<{id: string; name: string}>;
+  accounts: Array<{ id: string; name: string }>;
   editTransaction?: Transaction;
 }
 
@@ -41,8 +42,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   accounts,
   editTransaction,
 }) => {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const systemColorScheme = useColorScheme();
+  const { settings } = useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [type, setType] = useState<'income' | 'expense'>(
     editTransaction?.type || 'expense',
@@ -58,7 +62,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     editTransaction?.date || new Date().toISOString().split('T')[0],
   );
   const [accountId, setAccountId] = useState(
-    editTransaction?.accountId || (accounts[0]?.id || ''),
+    editTransaction?.accountId || accounts[0]?.id || '',
   );
 
   const handleSave = () => {
@@ -88,49 +92,53 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
-          <Text style={[styles.modalTitle, {color: theme.text}]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
             {editTransaction ? 'Edit Transaction' : 'Add Transaction'}
           </Text>
 
           <ScrollView style={styles.form}>
             {/* Type Selection */}
-            <Text style={[styles.label, {color: theme.text}]}>Type</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Type</Text>
             <View style={styles.typeContainer}>
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  type === 'income' && {backgroundColor: theme.income},
-                  {borderColor: theme.border},
+                  type === 'income' && { backgroundColor: theme.income },
+                  { borderColor: theme.border },
                 ]}
-                onPress={() => setType('income')}>
+                onPress={() => setType('income')}
+              >
                 <Text
                   style={[
                     styles.typeText,
-                    {color: type === 'income' ? '#FFF' : theme.text},
-                  ]}>
+                    { color: type === 'income' ? '#FFF' : theme.text },
+                  ]}
+                >
                   Income
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  type === 'expense' && {backgroundColor: theme.expense},
-                  {borderColor: theme.border},
+                  type === 'expense' && { backgroundColor: theme.expense },
+                  { borderColor: theme.border },
                 ]}
-                onPress={() => setType('expense')}>
+                onPress={() => setType('expense')}
+              >
                 <Text
                   style={[
                     styles.typeText,
-                    {color: type === 'expense' ? '#FFF' : theme.text},
-                  ]}>
+                    { color: type === 'expense' ? '#FFF' : theme.text },
+                  ]}
+                >
                   Expense
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Amount */}
-            <Text style={[styles.label, {color: theme.text}]}>Amount</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Amount</Text>
             <TextInput
               style={[
                 styles.input,
@@ -148,22 +156,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             />
 
             {/* Category */}
-            <Text style={[styles.label, {color: theme.text}]}>Category</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Category</Text>
             <View style={styles.categoryContainer}>
               {CATEGORIES.map(cat => (
                 <TouchableOpacity
                   key={cat}
                   style={[
                     styles.categoryChip,
-                    category === cat && {backgroundColor: theme.primary},
-                    {borderColor: theme.border},
+                    category === cat && { backgroundColor: theme.primary },
+                    { borderColor: theme.border },
                   ]}
-                  onPress={() => setCategory(cat)}>
+                  onPress={() => setCategory(cat)}
+                >
                   <Text
                     style={[
                       styles.categoryText,
-                      {color: category === cat ? '#FFF' : theme.text},
-                    ]}>
+                      { color: category === cat ? '#FFF' : theme.text },
+                    ]}
+                  >
                     {cat}
                   </Text>
                 </TouchableOpacity>
@@ -171,7 +181,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </View>
 
             {/* Description */}
-            <Text style={[styles.label, {color: theme.text}]}>Description</Text>
+            <Text style={[styles.label, { color: theme.text }]}>
+              Description
+            </Text>
             <TextInput
               style={[
                 styles.input,
@@ -188,22 +200,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             />
 
             {/* Account */}
-            <Text style={[styles.label, {color: theme.text}]}>Account</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Account</Text>
             <View style={styles.accountContainer}>
               {accounts.map(acc => (
                 <TouchableOpacity
                   key={acc.id}
                   style={[
                     styles.accountChip,
-                    accountId === acc.id && {backgroundColor: theme.primary},
-                    {borderColor: theme.border},
+                    accountId === acc.id && { backgroundColor: theme.primary },
+                    { borderColor: theme.border },
                   ]}
-                  onPress={() => setAccountId(acc.id)}>
+                  onPress={() => setAccountId(acc.id)}
+                >
                   <Text
                     style={[
                       styles.accountText,
-                      {color: accountId === acc.id ? '#FFF' : theme.text},
-                    ]}>
+                      { color: accountId === acc.id ? '#FFF' : theme.text },
+                    ]}
+                  >
                     {acc.name}
                   </Text>
                 </TouchableOpacity>
@@ -211,7 +225,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </View>
 
             {/* Date */}
-            <Text style={[styles.label, {color: theme.text}]}>Date</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Date</Text>
             <TextInput
               style={[
                 styles.input,
@@ -231,13 +245,15 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.textSecondary}]}
-              onPress={onClose}>
+              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              onPress={onClose}
+            >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.primary}]}
-              onPress={handleSave}>
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={handleSave}
+            >
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
           </View>

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {lightTheme, darkTheme} from '../theme';
 import {Account} from '../types';
+import { useData } from '../context/DataContext';
 
 interface AddAccountModalProps {
   visible: boolean;
@@ -31,8 +32,11 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
   onSave,
   editAccount,
 }) => {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const systemColorScheme = useColorScheme();
+  const { settings } = useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [name, setName] = useState(editAccount?.name || '');
   const [type, setType] = useState<'checking' | 'savings' | 'credit' | 'cash'>(
@@ -66,13 +70,15 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
-          <Text style={[styles.modalTitle, {color: theme.text}]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
             {editAccount ? 'Edit Account' : 'Add Account'}
           </Text>
 
           {/* Account Name */}
-          <Text style={[styles.label, {color: theme.text}]}>Account Name</Text>
+          <Text style={[styles.label, { color: theme.text }]}>
+            Account Name
+          </Text>
           <TextInput
             style={[
               styles.input,
@@ -89,22 +95,26 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
           />
 
           {/* Account Type */}
-          <Text style={[styles.label, {color: theme.text}]}>Account Type</Text>
+          <Text style={[styles.label, { color: theme.text }]}>
+            Account Type
+          </Text>
           <View style={styles.typeContainer}>
             {ACCOUNT_TYPES.map(accountType => (
               <TouchableOpacity
                 key={accountType}
                 style={[
                   styles.typeChip,
-                  type === accountType && {backgroundColor: theme.primary},
-                  {borderColor: theme.border},
+                  type === accountType && { backgroundColor: theme.primary },
+                  { borderColor: theme.border },
                 ]}
-                onPress={() => setType(accountType)}>
+                onPress={() => setType(accountType)}
+              >
                 <Text
                   style={[
                     styles.typeText,
-                    {color: type === accountType ? '#FFF' : theme.text},
-                  ]}>
+                    { color: type === accountType ? '#FFF' : theme.text },
+                  ]}
+                >
                   {accountType.charAt(0).toUpperCase() + accountType.slice(1)}
                 </Text>
               </TouchableOpacity>
@@ -112,7 +122,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
           </View>
 
           {/* Initial Balance */}
-          <Text style={[styles.label, {color: theme.text}]}>
+          <Text style={[styles.label, { color: theme.text }]}>
             {editAccount ? 'Current Balance' : 'Initial Balance'}
           </Text>
           <TextInput
@@ -132,7 +142,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
           />
 
           {/* Currency */}
-          <Text style={[styles.label, {color: theme.text}]}>Currency</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Currency</Text>
           <TextInput
             style={[
               styles.input,
@@ -151,13 +161,15 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.textSecondary}]}
-              onPress={onClose}>
+              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              onPress={onClose}
+            >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.primary}]}
-              onPress={handleSave}>
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={handleSave}
+            >
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
           </View>

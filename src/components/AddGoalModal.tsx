@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {lightTheme, darkTheme} from '../theme';
 import {Goal} from '../types';
+import { useData } from '../context/DataContext';
 
 interface AddGoalModalProps {
   visible: boolean;
@@ -36,8 +37,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   onSave,
   editGoal,
 }) => {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const systemColorScheme = useColorScheme();
+  const { settings } = useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [name, setName] = useState(editGoal?.name || '');
   const [targetAmount, setTargetAmount] = useState(
@@ -74,13 +78,13 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
-          <Text style={[styles.modalTitle, {color: theme.text}]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
             {editGoal ? 'Edit Goal' : 'Add Goal'}
           </Text>
 
           {/* Goal Name */}
-          <Text style={[styles.label, {color: theme.text}]}>Goal Name</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Goal Name</Text>
           <TextInput
             style={[
               styles.input,
@@ -97,22 +101,24 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
           />
 
           {/* Category */}
-          <Text style={[styles.label, {color: theme.text}]}>Category</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Category</Text>
           <View style={styles.categoryContainer}>
             {GOAL_CATEGORIES.map(cat => (
               <TouchableOpacity
                 key={cat}
                 style={[
                   styles.categoryChip,
-                  category === cat && {backgroundColor: theme.primary},
-                  {borderColor: theme.border},
+                  category === cat && { backgroundColor: theme.primary },
+                  { borderColor: theme.border },
                 ]}
-                onPress={() => setCategory(cat)}>
+                onPress={() => setCategory(cat)}
+              >
                 <Text
                   style={[
                     styles.categoryText,
-                    {color: category === cat ? '#FFF' : theme.text},
-                  ]}>
+                    { color: category === cat ? '#FFF' : theme.text },
+                  ]}
+                >
                   {cat}
                 </Text>
               </TouchableOpacity>
@@ -120,7 +126,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
           </View>
 
           {/* Target Amount */}
-          <Text style={[styles.label, {color: theme.text}]}>
+          <Text style={[styles.label, { color: theme.text }]}>
             Target Amount
           </Text>
           <TextInput
@@ -140,7 +146,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
           />
 
           {/* Current Amount */}
-          <Text style={[styles.label, {color: theme.text}]}>
+          <Text style={[styles.label, { color: theme.text }]}>
             Current Amount
           </Text>
           <TextInput
@@ -160,7 +166,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
           />
 
           {/* Deadline */}
-          <Text style={[styles.label, {color: theme.text}]}>
+          <Text style={[styles.label, { color: theme.text }]}>
             Deadline (YYYY-MM-DD)
           </Text>
           <TextInput
@@ -181,13 +187,15 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.textSecondary}]}
-              onPress={onClose}>
+              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              onPress={onClose}
+            >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.primary}]}
-              onPress={handleSave}>
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={handleSave}
+            >
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
           </View>

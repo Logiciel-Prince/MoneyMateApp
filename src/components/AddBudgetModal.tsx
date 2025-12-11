@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {lightTheme, darkTheme} from '../theme';
 import {Budget} from '../types';
+import { useData } from '../context/DataContext';
 
 interface AddBudgetModalProps {
   visible: boolean;
@@ -37,8 +38,11 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
   onSave,
   editBudget,
 }) => {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const systemColorScheme = useColorScheme();
+  const { settings } = useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [category, setCategory] = useState(editBudget?.category || '');
   const [amount, setAmount] = useState(editBudget?.amount.toString() || '');
@@ -70,28 +74,30 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
-          <Text style={[styles.modalTitle, {color: theme.text}]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
             {editBudget ? 'Edit Budget' : 'Add Budget'}
           </Text>
 
           {/* Category */}
-          <Text style={[styles.label, {color: theme.text}]}>Category</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Category</Text>
           <View style={styles.categoryContainer}>
             {BUDGET_CATEGORIES.map(cat => (
               <TouchableOpacity
                 key={cat}
                 style={[
                   styles.categoryChip,
-                  category === cat && {backgroundColor: theme.primary},
-                  {borderColor: theme.border},
+                  category === cat && { backgroundColor: theme.primary },
+                  { borderColor: theme.border },
                 ]}
-                onPress={() => setCategory(cat)}>
+                onPress={() => setCategory(cat)}
+              >
                 <Text
                   style={[
                     styles.categoryText,
-                    {color: category === cat ? '#FFF' : theme.text},
-                  ]}>
+                    { color: category === cat ? '#FFF' : theme.text },
+                  ]}
+                >
                   {cat}
                 </Text>
               </TouchableOpacity>
@@ -99,7 +105,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
           </View>
 
           {/* Budget Amount */}
-          <Text style={[styles.label, {color: theme.text}]}>
+          <Text style={[styles.label, { color: theme.text }]}>
             Budget Amount
           </Text>
           <TextInput
@@ -119,7 +125,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
           />
 
           {/* Spent Amount */}
-          <Text style={[styles.label, {color: theme.text}]}>
+          <Text style={[styles.label, { color: theme.text }]}>
             Already Spent
           </Text>
           <TextInput
@@ -139,35 +145,39 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
           />
 
           {/* Period */}
-          <Text style={[styles.label, {color: theme.text}]}>Period</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Period</Text>
           <View style={styles.periodContainer}>
             <TouchableOpacity
               style={[
                 styles.periodButton,
-                period === 'monthly' && {backgroundColor: theme.primary},
-                {borderColor: theme.border},
+                period === 'monthly' && { backgroundColor: theme.primary },
+                { borderColor: theme.border },
               ]}
-              onPress={() => setPeriod('monthly')}>
+              onPress={() => setPeriod('monthly')}
+            >
               <Text
                 style={[
                   styles.periodText,
-                  {color: period === 'monthly' ? '#FFF' : theme.text},
-                ]}>
+                  { color: period === 'monthly' ? '#FFF' : theme.text },
+                ]}
+              >
                 Monthly
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.periodButton,
-                period === 'yearly' && {backgroundColor: theme.primary},
-                {borderColor: theme.border},
+                period === 'yearly' && { backgroundColor: theme.primary },
+                { borderColor: theme.border },
               ]}
-              onPress={() => setPeriod('yearly')}>
+              onPress={() => setPeriod('yearly')}
+            >
               <Text
                 style={[
                   styles.periodText,
-                  {color: period === 'yearly' ? '#FFF' : theme.text},
-                ]}>
+                  { color: period === 'yearly' ? '#FFF' : theme.text },
+                ]}
+              >
                 Yearly
               </Text>
             </TouchableOpacity>
@@ -176,13 +186,15 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.textSecondary}]}
-              onPress={onClose}>
+              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              onPress={onClose}
+            >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.primary}]}
-              onPress={handleSave}>
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={handleSave}
+            >
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
           </View>

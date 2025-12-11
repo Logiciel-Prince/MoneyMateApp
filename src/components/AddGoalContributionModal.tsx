@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import {lightTheme, darkTheme} from '../theme';
 import {Goal, Account} from '../types';
+import { useData } from '../context/DataContext';
 
 interface AddGoalContributionModalProps {
   visible: boolean;
@@ -28,8 +29,11 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
   goal,
   accounts,
 }) => {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const systemColorScheme = useColorScheme();
+  const { settings } = useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [amount, setAmount] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
@@ -51,16 +55,19 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
       Alert.alert('Error', 'Please select an account to deduct from');
       return;
     }
-    
+
     // Check for sufficiency
     const acc = accounts.find(a => a.id === selectedAccountId);
     if (acc && acc.balance < parseFloat(amount)) {
-        Alert.alert('Insufficient Funds', `Account ${acc.name} has only ₹${acc.balance}`);
-        return;
+      Alert.alert(
+        'Insufficient Funds',
+        `Account ${acc.name} has only ₹${acc.balance}`,
+      );
+      return;
     }
 
     if (goal) {
-       onSave(goal.id, parseFloat(amount), selectedAccountId);
+      onSave(goal.id, parseFloat(amount), selectedAccountId);
     }
     onClose();
   };
@@ -68,74 +75,102 @@ const AddGoalContributionModal: React.FC<AddGoalContributionModalProps> = ({
   if (!goal) return null;
 
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, {backgroundColor: theme.card}]}>
-          <Text style={[styles.modalTitle, {color: theme.text}]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
             Add to "{goal.name}"
           </Text>
 
-          <ScrollView style={{maxHeight: 400}}>
+          <ScrollView style={{ maxHeight: 400 }}>
             {/* Amount Input */}
-            <Text style={[styles.label, {color: theme.text}]}>Amount to Save</Text>
+            <Text style={[styles.label, { color: theme.text }]}>
+              Amount to Save
+            </Text>
             <TextInput
-                style={[
-                    styles.input,
-                    {
-                        backgroundColor: theme.background,
-                        color: theme.text,
-                        borderColor: theme.border,
-                    },
-                ]}
-                placeholder="0.00"
-                placeholderTextColor={theme.textSecondary}
-                keyboardType="decimal-pad"
-                value={amount}
-                onChangeText={setAmount}
-                autoFocus
-             />
-            
-            <Text style={[styles.helperText, {color: theme.textSecondary}]}>
-               Target: ₹{goal.targetAmount.toLocaleString()} — Current: ₹{goal.currentAmount.toLocaleString()}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.background,
+                  color: theme.text,
+                  borderColor: theme.border,
+                },
+              ]}
+              placeholder="0.00"
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="decimal-pad"
+              value={amount}
+              onChangeText={setAmount}
+              autoFocus
+            />
+
+            <Text style={[styles.helperText, { color: theme.textSecondary }]}>
+              Target: ₹{goal.targetAmount.toLocaleString()} — Current: ₹
+              {goal.currentAmount.toLocaleString()}
             </Text>
 
             {/* Account Selection (Always Visible) */}
             <View style={styles.accountSelection}>
-                <Text style={[styles.label, {color: theme.text}]}>Deduct From Account</Text>
-                <View style={styles.accountChips}>
-                    {accounts.map(acc => (
-                        <TouchableOpacity
-                           key={acc.id}
-                           style={[
-                               styles.accountChip,
-                               selectedAccountId === acc.id && {backgroundColor: theme.primary, borderColor: theme.primary},
-                               {borderColor: theme.border}
-                           ]}
-                           onPress={() => setSelectedAccountId(acc.id)}
-                        >
-                            <Text style={[
-                                styles.accountChipText,
-                                {color: selectedAccountId === acc.id ? '#FFF' : theme.text}
-                            ]}>
-                                {acc.name} (₹{acc.balance.toLocaleString('en-IN', {maximumFractionDigits: 0})})
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+              <Text style={[styles.label, { color: theme.text }]}>
+                Deduct From Account
+              </Text>
+              <View style={styles.accountChips}>
+                {accounts.map(acc => (
+                  <TouchableOpacity
+                    key={acc.id}
+                    style={[
+                      styles.accountChip,
+                      selectedAccountId === acc.id && {
+                        backgroundColor: theme.primary,
+                        borderColor: theme.primary,
+                      },
+                      { borderColor: theme.border },
+                    ]}
+                    onPress={() => setSelectedAccountId(acc.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.accountChipText,
+                        {
+                          color:
+                            selectedAccountId === acc.id ? '#FFF' : theme.text,
+                        },
+                      ]}
+                    >
+                      {acc.name} (₹
+                      {acc.balance.toLocaleString('en-IN', {
+                        maximumFractionDigits: 0,
+                      })}
+                      )
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </ScrollView>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.border}]}
-              onPress={onClose}>
-              <Text style={[styles.buttonText, {color: theme.text}]}>Cancel</Text>
+              style={[styles.button, { backgroundColor: theme.border }]}
+              onPress={onClose}
+            >
+              <Text style={[styles.buttonText, { color: theme.text }]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: theme.primary}]}
-              onPress={handleSave}>
-              <Text style={[styles.buttonText, {color: '#FFF'}]}>Add Money</Text>
+              style={[styles.button, { backgroundColor: theme.primary }]}
+              onPress={handleSave}
+            >
+              <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                Add Money
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
