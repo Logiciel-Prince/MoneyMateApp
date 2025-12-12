@@ -482,66 +482,109 @@ const DashboardScreen = ({ navigation }: any) => {
                 </Text>
               </View>
 
-              <BarChart
-                data={barChartData}
-                barWidth={16}
-                spacing={20}
-                roundedTop
-                roundedBottom={false}
-                hideRules
-                xAxisThickness={0}
-                yAxisThickness={0}
-                yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
-                noOfSections={4}
-                maxValue={Math.max(...barChartData.map(d => d.value)) * 1.2} // 20% buffer
-                barBorderRadius={4}
-                isAnimated
-                animationDuration={500}
-                yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
-                formatYLabel={label => {
-                  const value = parseFloat(label);
-                  if (value >= 100000)
-                    return (
-                      (value / 100000).toFixed(1).replace(/\.0$/, '') + 'L'
-                    );
-                  if (value >= 1000)
-                    return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-                  return label;
-                }}
-                renderTooltip={(item: any) => {
-                  return (
-                    <View
-                      style={{
-                        marginBottom: 5,
-                        marginLeft: -10,
-                        backgroundColor: theme.card,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 4,
-                        borderWidth: 1,
-                        borderColor: theme.border,
-                        elevation: 5,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 3.84,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: theme.text,
-                          fontSize: 10,
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {formatCurrency(item.value, settings.currency, {
-                          maximumFractionDigits: 0,
-                        })}
-                      </Text>
-                    </View>
-                  );
-                }}
-              />
+              {(() => {
+                const rawMax = Math.max(
+                  ...barChartData.map((d: any) => d.value || 0),
+                  1,
+                );
+                // Calculate a nice max value that divides cleanly by 4 (noOfSections)
+                // 1. Rough max with padding
+                const roughMax = rawMax * 1.2;
+
+                // Effective way:
+                const sectionCount = 4;
+                const intervals = [1, 2, 5, 10];
+                const baseStep = Math.pow(
+                  10,
+                  Math.floor(Math.log10(roughMax / sectionCount)),
+                );
+
+                let bestStep = baseStep;
+                for (let interval of intervals) {
+                  const currentStep = baseStep * interval;
+                  if (currentStep * sectionCount >= roughMax) {
+                    bestStep = currentStep;
+                    break;
+                  }
+                }
+                const calculatedMax = bestStep * sectionCount;
+
+                return (
+                  <BarChart
+                    data={barChartData}
+                    barWidth={16}
+                    spacing={20}
+                    roundedTop
+                    roundedBottom={false}
+                    hideRules
+                    xAxisThickness={0}
+                    yAxisThickness={0}
+                    yAxisTextStyle={{
+                      color: theme.textSecondary,
+                      fontSize: 10,
+                    }}
+                    noOfSections={4}
+                    maxValue={calculatedMax}
+                    barBorderRadius={4}
+                    isAnimated
+                    animationDuration={500}
+                    yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
+                    formatYLabel={label => {
+                      const value = parseInt(label, 10);
+                      if (value >= 10000000) {
+                        return (
+                          (value / 10000000).toFixed(1).replace(/\.0$/, '') +
+                          'Cr'
+                        );
+                      }
+                      if (value >= 100000) {
+                        return (
+                          (value / 100000).toFixed(1).replace(/\.0$/, '') + 'L'
+                        );
+                      }
+                      if (value >= 1000) {
+                        return (
+                          (value / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+                        );
+                      }
+                      return value.toString();
+                    }}
+                    renderTooltip={(item: any) => {
+                      return (
+                        <View
+                          style={{
+                            marginBottom: 5,
+                            marginLeft: -10,
+                            backgroundColor: theme.card,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 4,
+                            borderWidth: 1,
+                            borderColor: theme.border,
+                            elevation: 5,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.25,
+                            shadowRadius: 3.84,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: theme.text,
+                              fontSize: 10,
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            {formatCurrency(item.value, settings.currency, {
+                              maximumFractionDigits: 0,
+                            })}
+                          </Text>
+                        </View>
+                      );
+                    }}
+                  />
+                );
+              })()}
               {/* Legend for Bar Chart */}
               <View
                 style={{
