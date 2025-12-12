@@ -18,12 +18,13 @@ import AddBudgetModal from '../components/AddBudgetModal';
 const BudgetsScreen = () => {
   const systemColorScheme = useColorScheme();
   const {
+    deleteBudget,
+    categories,
+    settings,
     budgets,
     transactions,
     addBudget,
     updateBudget,
-    deleteBudget,
-    settings,
   } = useData();
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
@@ -120,19 +121,35 @@ const BudgetsScreen = () => {
       trendPercentage = 100;
     }
 
+    const categoryObj = categories.find(c => c.name === item.category);
+
     return (
       <TouchableOpacity
         style={[styles.budgetCard, { backgroundColor: theme.card }]}
         onLongPress={() => handleEdit(item)}
       >
         <View style={styles.budgetHeader}>
-          <View style={styles.budgetLeft}>
-            <Text style={[styles.category, { color: theme.text }]}>
-              {item.category}
-            </Text>
-            <Text style={[styles.period, { color: theme.textSecondary }]}>
-              {item.period.charAt(0).toUpperCase() + item.period.slice(1)}
-            </Text>
+          <View style={styles.headerLeftContainer}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: categoryObj?.color || theme.primary },
+              ]}
+            >
+              <Icon
+                name={categoryObj?.icon || 'pricetag'}
+                size={20}
+                color="#FFF"
+              />
+            </View>
+            <View style={styles.budgetLeft}>
+              <Text style={[styles.category, { color: theme.text }]}>
+                {item.category}
+              </Text>
+              <Text style={[styles.period, { color: theme.textSecondary }]}>
+                {item.period.charAt(0).toUpperCase() + item.period.slice(1)}
+              </Text>
+            </View>
           </View>
           <View style={styles.budgetRight}>
             <Text style={[styles.amount, { color: theme.text }]}>
@@ -397,6 +414,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  headerLeftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   budgetLeft: {
     flex: 1,

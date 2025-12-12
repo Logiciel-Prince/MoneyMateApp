@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   Modal,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   useColorScheme,
 } from 'react-native';
-import {lightTheme, darkTheme} from '../theme';
-import {Budget} from '../types';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { BlurView } from '@react-native-community/blur';
+import { Dropdown } from 'react-native-element-dropdown';
+import { lightTheme, darkTheme } from '../theme';
+import { Budget, CategoryType } from '../types';
 import { useData } from '../context/DataContext';
 
 interface AddBudgetModalProps {
@@ -19,19 +23,6 @@ interface AddBudgetModalProps {
   editBudget?: Budget;
 }
 
-const BUDGET_CATEGORIES = [
-  'Groceries',
-  'Transportation',
-  'Entertainment',
-  'Healthcare',
-  'Shopping',
-  'Utilities',
-  'Rent',
-  'Dining',
-  'Education',
-  'Other',
-];
-
 const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
   visible,
   onClose,
@@ -39,17 +30,35 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
   editBudget,
 }) => {
   const systemColorScheme = useColorScheme();
-  const { settings } = useData();
+  const { settings, categories } = useData();
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [category, setCategory] = useState(editBudget?.category || '');
   const [amount, setAmount] = useState(editBudget?.amount.toString() || '');
-  const [spent, setSpent] = useState(editBudget?.spent.toString() || '0');
   const [period, setPeriod] = useState<'monthly' | 'yearly'>(
     editBudget?.period || 'monthly',
   );
+
+  // Filter categories for Expense type
+  const availableCategories = useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return [];
+    }
+    return categories
+      .filter(cat => cat.type === CategoryType.EXPENSE)
+      .sort((a, b) => {
+        if (a.is_default && !b.is_default) return -1;
+        if (!a.is_default && b.is_default) return 1;
+        return a.name.localeCompare(b.name);
+      })
+      .map(cat => ({
+        label: cat.name,
+        value: cat.name,
+        color: cat.color,
+      }));
+  }, [categories]);
 
   const handleSave = () => {
     if (!category || !amount) {
@@ -59,14 +68,13 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
     onSave({
       category,
       amount: parseFloat(amount),
-      spent: parseFloat(spent),
+      spent: editBudget?.spent || 0, // Keep existing spent or 0
       period,
     });
 
     // Reset form
     setCategory('');
     setAmount('');
-    setSpent('0');
     setPeriod('monthly');
     onClose();
   };
@@ -74,128 +82,191 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType={activeThemeType === 'dark' ? 'dark' : 'light'}
+          blurAmount={5}
+          reducedTransparencyFallbackColor="white"
+        />
         <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>
-            {editBudget ? 'Edit Budget' : 'Add Budget'}
-          </Text>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {editBudget ? 'Edit Budget' : 'Add Budget'}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={24} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-          {/* Category */}
-          <Text style={[styles.label, { color: theme.text }]}>Category</Text>
-          <View style={styles.categoryContainer}>
-            {BUDGET_CATEGORIES.map(cat => (
+          <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+            {/* Category */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Category
+            </Text>
+            <Dropdown
+              style={[
+                styles.dropdown,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+              placeholderStyle={[
+                styles.placeholderStyle,
+                { color: theme.textSecondary },
+              ]}
+              selectedTextStyle={[
+                styles.selectedTextStyle,
+                { color: theme.text },
+              ]}
+              iconStyle={styles.iconStyle}
+              data={availableCategories}
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Select category"
+              value={category}
+              onChange={item => {
+                setCategory(item.value);
+              }}
+              renderLeftIcon={() => (
+                <Icon
+                  name="pricetag-outline"
+                  size={20}
+                  color={theme.textSecondary}
+                  style={styles.inputIcon}
+                />
+              )}
+              renderItem={(item: any) => (
+                <View style={styles.dropdownItem}>
+                  <View
+                    style={[
+                      styles.categoryDot,
+                      { backgroundColor: item.color },
+                    ]}
+                  />
+                  <Text
+                    style={[styles.dropdownItemText, { color: theme.text }]}
+                  >
+                    {item.label}
+                  </Text>
+                  {category === item.value && (
+                    <Icon name="checkmark" size={20} color={theme.primary} />
+                  )}
+                </View>
+              )}
+              containerStyle={[
+                styles.dropdownContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            />
+
+            {/* Budget Amount */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Budget Limit
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="cash-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="0.00"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="decimal-pad"
+                value={amount}
+                onChangeText={setAmount}
+              />
+            </View>
+
+            {/* Period */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Period
+            </Text>
+            <View style={styles.periodContainer}>
               <TouchableOpacity
-                key={cat}
                 style={[
-                  styles.categoryChip,
-                  category === cat && { backgroundColor: theme.primary },
+                  styles.periodButton,
                   { borderColor: theme.border },
+                  period === 'monthly' && {
+                    backgroundColor: theme.primary,
+                    borderColor: theme.primary,
+                  },
                 ]}
-                onPress={() => setCategory(cat)}
+                onPress={() => setPeriod('monthly')}
               >
                 <Text
                   style={[
-                    styles.categoryText,
-                    { color: category === cat ? '#FFF' : theme.text },
+                    styles.periodText,
+                    { color: period === 'monthly' ? '#FFF' : theme.text },
                   ]}
                 >
-                  {cat}
+                  Monthly
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Budget Amount */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Budget Amount
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="0.00"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="decimal-pad"
-            value={amount}
-            onChangeText={setAmount}
-          />
-
-          {/* Spent Amount */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Already Spent
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="0.00"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="decimal-pad"
-            value={spent}
-            onChangeText={setSpent}
-          />
-
-          {/* Period */}
-          <Text style={[styles.label, { color: theme.text }]}>Period</Text>
-          <View style={styles.periodContainer}>
-            <TouchableOpacity
-              style={[
-                styles.periodButton,
-                period === 'monthly' && { backgroundColor: theme.primary },
-                { borderColor: theme.border },
-              ]}
-              onPress={() => setPeriod('monthly')}
-            >
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.periodText,
-                  { color: period === 'monthly' ? '#FFF' : theme.text },
+                  styles.periodButton,
+                  { borderColor: theme.border },
+                  period === 'yearly' && {
+                    backgroundColor: theme.primary,
+                    borderColor: theme.primary,
+                  },
                 ]}
+                onPress={() => setPeriod('yearly')}
               >
-                Monthly
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.periodButton,
-                period === 'yearly' && { backgroundColor: theme.primary },
-                { borderColor: theme.border },
-              ]}
-              onPress={() => setPeriod('yearly')}
-            >
-              <Text
-                style={[
-                  styles.periodText,
-                  { color: period === 'yearly' ? '#FFF' : theme.text },
-                ]}
-              >
-                Yearly
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text
+                  style={[
+                    styles.periodText,
+                    { color: period === 'yearly' ? '#FFF' : theme.text },
+                  ]}
+                >
+                  Yearly
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              style={[
+                styles.button,
+                styles.cancelButton,
+                {
+                  borderColor: theme.border,
+                  backgroundColor: theme.background,
+                },
+              ]}
               onPress={onClose}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: theme.text }]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.primary }]}
+              style={[
+                styles.button,
+                styles.saveButton,
+                { backgroundColor: theme.primary },
+              ]}
               onPress={handleSave}
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={[styles.buttonText, { color: '#FFF' }]}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -207,76 +278,132 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '85%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  form: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginTop: 15,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 1.5,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    flex: 1,
     fontSize: 16,
+    padding: 0,
   },
-  categoryContainer: {
+  dropdown: {
+    height: 50,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+  },
+  placeholderStyle: {
+    fontSize: 15,
+  },
+  selectedTextStyle: {
+    fontSize: 15,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  dropdownContainer: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginTop: 4,
+  },
+  dropdownItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'center',
+    padding: 14,
+    gap: 10,
   },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+  dropdownItemText: {
+    flex: 1,
+    fontSize: 15,
   },
-  categoryText: {
-    fontSize: 14,
+  categoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   periodContainer: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
   periodButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
     alignItems: 'center',
   },
   periodText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    gap: 12,
+    paddingTop: 8,
   },
   button: {
     flex: 1,
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
+  cancelButton: {
+    borderWidth: 1.5,
+  },
+  saveButton: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
   buttonText: {
-    color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 
