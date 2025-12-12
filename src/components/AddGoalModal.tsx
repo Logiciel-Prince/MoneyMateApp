@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,15 @@ import {
   Modal,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   useColorScheme,
+  Platform,
 } from 'react-native';
-import {lightTheme, darkTheme} from '../theme';
-import {Goal} from '../types';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { BlurView } from '@react-native-community/blur';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { lightTheme, darkTheme } from '../theme';
+import { Goal } from '../types';
 import { useData } from '../context/DataContext';
 
 interface AddGoalModalProps {
@@ -18,18 +23,6 @@ interface AddGoalModalProps {
   onSave: (goal: Omit<Goal, 'id'>) => void;
   editGoal?: Goal;
 }
-
-const GOAL_CATEGORIES = [
-  'Savings',
-  'Travel',
-  'Electronics',
-  'Education',
-  'Home',
-  'Car',
-  'Emergency',
-  'Investment',
-  'Other',
-];
 
 const AddGoalModal: React.FC<AddGoalModalProps> = ({
   visible,
@@ -51,10 +44,32 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
     editGoal?.currentAmount.toString() || '0',
   );
   const [deadline, setDeadline] = useState(editGoal?.deadline || '');
-  const [category, setCategory] = useState(editGoal?.category || '');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handleNumericInput = (
+    text: string,
+    setter: (value: string) => void,
+  ) => {
+    // Allow digits and a single decimal point
+    const cleaned = text.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      setter(parts[0] + '.' + parts.slice(1).join(''));
+    } else {
+      setter(cleaned);
+    }
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const formatted = selectedDate.toISOString().split('T')[0];
+      setDeadline(formatted);
+    }
+  };
 
   const handleSave = () => {
-    if (!name || !targetAmount || !deadline || !category) {
+    if (!name || !targetAmount || !deadline) {
       return;
     }
 
@@ -63,7 +78,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
       targetAmount: parseFloat(targetAmount),
       currentAmount: parseFloat(currentAmount),
       deadline,
-      category,
+      category: 'Savings', // Default category
     });
 
     // Reset form
@@ -71,132 +86,191 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
     setTargetAmount('');
     setCurrentAmount('0');
     setDeadline('');
-    setCategory('');
     onClose();
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType={activeThemeType === 'dark' ? 'dark' : 'light'}
+          blurAmount={5}
+          reducedTransparencyFallbackColor="white"
+        />
         <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>
-            {editGoal ? 'Edit Goal' : 'Add Goal'}
-          </Text>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {editGoal ? 'Edit Goal' : 'Add Goal'}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={24} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-          {/* Goal Name */}
-          <Text style={[styles.label, { color: theme.text }]}>Goal Name</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="e.g., Emergency Fund"
-            placeholderTextColor={theme.textSecondary}
-            value={name}
-            onChangeText={setName}
-          />
+          <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+            {/* Goal Name */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Goal Name
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="flag-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="e.g., Emergency Fund"
+                placeholderTextColor={theme.textSecondary}
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
 
-          {/* Category */}
-          <Text style={[styles.label, { color: theme.text }]}>Category</Text>
-          <View style={styles.categoryContainer}>
-            {GOAL_CATEGORIES.map(cat => (
+            {/* Target Amount */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Target Amount
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="cash-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="0.00"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="decimal-pad"
+                value={targetAmount}
+                onChangeText={text => handleNumericInput(text, setTargetAmount)}
+              />
+            </View>
+
+            {/* Current Amount */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Current Amount
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="wallet-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="0.00"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="decimal-pad"
+                value={currentAmount}
+                onChangeText={text =>
+                  handleNumericInput(text, setCurrentAmount)
+                }
+              />
+            </View>
+
+            {/* Deadline */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              Deadline (YYYY-MM-DD)
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Icon
+                name="calendar-outline"
+                size={20}
+                color={theme.textSecondary}
+                style={styles.inputIcon}
+              />
               <TouchableOpacity
-                key={cat}
-                style={[
-                  styles.categoryChip,
-                  category === cat && { backgroundColor: theme.primary },
-                  { borderColor: theme.border },
-                ]}
-                onPress={() => setCategory(cat)}
+                onPress={() => setShowDatePicker(true)}
+                style={{ flex: 1 }}
               >
                 <Text
                   style={[
-                    styles.categoryText,
-                    { color: category === cat ? '#FFF' : theme.text },
+                    styles.input,
+                    {
+                      color: deadline ? theme.text : theme.textSecondary,
+                      paddingVertical: 12, // Match input padding
+                    },
                   ]}
                 >
-                  {cat}
+                  {deadline || 'YYYY-MM-DD'}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
+            </View>
 
-          {/* Target Amount */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Target Amount
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="0.00"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="decimal-pad"
-            value={targetAmount}
-            onChangeText={setTargetAmount}
-          />
-
-          {/* Current Amount */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Current Amount
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="0.00"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="decimal-pad"
-            value={currentAmount}
-            onChangeText={setCurrentAmount}
-          />
-
-          {/* Deadline */}
-          <Text style={[styles.label, { color: theme.text }]}>
-            Deadline (YYYY-MM-DD)
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderColor: theme.border,
-              },
-            ]}
-            placeholder="2025-12-31"
-            placeholderTextColor={theme.textSecondary}
-            value={deadline}
-            onChangeText={setDeadline}
-          />
+            {showDatePicker && (
+              <DateTimePicker
+                value={deadline ? new Date(deadline) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+                minimumDate={new Date()}
+              />
+            )}
+          </ScrollView>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.textSecondary }]}
+              style={[
+                styles.button,
+                styles.cancelButton,
+                {
+                  borderColor: theme.border,
+                  backgroundColor: theme.background,
+                },
+              ]}
               onPress={onClose}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: theme.text }]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.primary }]}
+              style={[
+                styles.button,
+                styles.saveButton,
+                { backgroundColor: theme.primary },
+              ]}
               onPress={handleSave}
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={[styles.buttonText, { color: '#FFF' }]}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -208,61 +282,112 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '85%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  form: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginTop: 15,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 1.5,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    flex: 1,
     fontSize: 16,
+    padding: 0,
   },
-  categoryContainer: {
+  dropdown: {
+    height: 50,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+  },
+  placeholderStyle: {
+    fontSize: 15,
+  },
+  selectedTextStyle: {
+    fontSize: 15,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  dropdownContainer: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginTop: 4,
+  },
+  dropdownItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'center',
+    padding: 14,
+    gap: 10,
   },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  categoryText: {
-    fontSize: 14,
+  dropdownItemText: {
+    flex: 1,
+    fontSize: 15,
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    gap: 12,
+    paddingTop: 8,
   },
   button: {
     flex: 1,
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
+  cancelButton: {
+    borderWidth: 1.5,
+  },
+  saveButton: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
   buttonText: {
-    color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 
