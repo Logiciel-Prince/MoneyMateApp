@@ -11,14 +11,21 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useData} from '../context/DataContext';
 import {lightTheme, darkTheme} from '../theme';
-import {Account} from '../types';
+import { Account, Transaction } from '../types';
 import AddAccountModal from '../components/AddAccountModal';
+import AddTransactionModal from '../components/AddTransactionModal';
 import { formatCurrency } from '../utils/currency';
 
 const AccountsScreen = () => {
   const systemColorScheme = useColorScheme();
-  const { accounts, addAccount, updateAccount, deleteAccount, settings } =
-    useData();
+  const {
+    accounts,
+    addAccount,
+    updateAccount,
+    deleteAccount,
+    settings,
+    addTransaction,
+  } = useData();
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
@@ -27,6 +34,11 @@ const AccountsScreen = () => {
   const [editingAccount, setEditingAccount] = useState<Account | undefined>(
     undefined,
   );
+
+  const [addTransactionVisible, setAddTransactionVisible] = useState(false);
+  const [selectedAccountForBalance, setSelectedAccountForBalance] = useState<
+    Account | undefined
+  >(undefined);
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
@@ -41,6 +53,21 @@ const AccountsScreen = () => {
       addAccount(newAccount);
     }
     setEditingAccount(undefined);
+  };
+
+  const handleAddBalance = (account: Account) => {
+    setSelectedAccountForBalance(account);
+    setAddTransactionVisible(true);
+  };
+
+  const handleSaveTransaction = (transactionData: Omit<Transaction, 'id'>) => {
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id: Date.now().toString(),
+    };
+    addTransaction(newTransaction);
+    setAddTransactionVisible(false);
+    setSelectedAccountForBalance(undefined);
   };
 
   const handleEdit = (account: Account) => {
@@ -114,12 +141,20 @@ const AccountsScreen = () => {
         >
           {formatCurrency(item.balance, settings.currency)}
         </Text>
-        <TouchableOpacity
-          onPress={() => handleDelete(item.id)}
-          style={styles.deleteButton}
-        >
-          <Icon name="trash-outline" size={20} color={theme.danger} />
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            onPress={() => handleAddBalance(item)}
+            style={styles.actionButton}
+          >
+            <Icon name="add-circle-outline" size={24} color={theme.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleDelete(item.id)}
+            style={styles.actionButton}
+          >
+            <Icon name="trash-outline" size={20} color={theme.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -178,6 +213,19 @@ const AccountsScreen = () => {
         onSave={handleAddAccount}
         editAccount={editingAccount}
       />
+
+      {/* Add Balance Modal */}
+      <AddTransactionModal
+        visible={addTransactionVisible}
+        onClose={() => {
+          setAddTransactionVisible(false);
+          setSelectedAccountForBalance(undefined);
+        }}
+        onSave={handleSaveTransaction}
+        accounts={accounts}
+        initialType="income"
+        initialAccountId={selectedAccountForBalance?.id}
+      />
     </View>
   );
 };
@@ -220,7 +268,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -257,6 +305,14 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionButton: {
+    padding: 4,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -283,7 +339,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },

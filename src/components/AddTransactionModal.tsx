@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,15 +13,17 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { BlurView } from '@react-native-community/blur';
 import { Dropdown } from 'react-native-element-dropdown';
 import { lightTheme, darkTheme } from '../theme';
-import { Transaction, CategoryType } from '../types';
+import { Transaction, CategoryType, Account } from '../types';
 import { useData } from '../context/DataContext';
 
 interface AddTransactionModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: (transaction: Omit<Transaction, 'id'>) => void;
-  accounts: Array<{ id: string; name: string }>;
+  accounts: Account[];
   editTransaction?: Transaction;
+  initialType?: 'income' | 'expense' | 'transfer';
+  initialAccountId?: string;
 }
 
 // Helper function to format date as YYYY-MM-DD HH:mm
@@ -40,6 +42,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   onSave,
   accounts,
   editTransaction,
+  initialType,
+  initialAccountId,
 }) => {
   const systemColorScheme = useColorScheme();
   const { settings, categories } = useData();
@@ -98,6 +102,32 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         color: cat.color,
       }));
   }, [categories, type]);
+
+  useEffect(() => {
+    if (visible) {
+      if (editTransaction) {
+        setType(editTransaction.type);
+        setAmount(editTransaction.amount.toString());
+        setCategory(editTransaction.category);
+        setDescription(editTransaction.description || '');
+        setAccountId(editTransaction.accountId);
+        setToAccountId(editTransaction.toAccountId || '');
+      } else {
+        setType(initialType || 'expense');
+        setAmount('');
+        setCategory('');
+        setDescription('');
+        setAccountId(initialAccountId || accounts[0]?.id || '');
+        setToAccountId('');
+      }
+      setErrors({
+        amount: '',
+        category: '',
+        accountId: '',
+        toAccountId: '',
+      });
+    }
+  }, [visible, editTransaction, initialType, initialAccountId, accounts]);
 
   const accountOptions = useMemo(() => {
     return accounts.map(acc => ({
