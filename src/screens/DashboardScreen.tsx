@@ -251,8 +251,8 @@ const DashboardScreen = ({ navigation }: any) => {
         const diffYears = now.getFullYear() - minDate.getFullYear();
         const diffMonths = diffYears * 12 + now.getMonth() - minDate.getMonth();
 
-        // We show at most 6 months (indices 0 to 5)
-        monthsBack = Math.min(Math.max(diffMonths, 0), 5);
+        // We show at most 5 months (indices 0 to 4)
+        monthsBack = Math.min(Math.max(diffMonths, 0), 4);
       } else {
         monthsBack = 0;
       }
@@ -291,7 +291,7 @@ const DashboardScreen = ({ navigation }: any) => {
       data.push({
         value: exp,
         frontColor: (theme as any).mode === 'dark' ? '#f87171' : '#dc2626',
-        spacing: 20, // larger spacing after the group
+        spacing: 32, // larger spacing after the group
       });
     }
 
@@ -545,98 +545,245 @@ const DashboardScreen = ({ navigation }: any) => {
               </View>
 
               {barChartData.length > 0 ? (
-                <BarChart
-                  key={`bar-chart-${transactions.length}-${totalBalance}`}
-                  data={barChartData}
-                  barWidth={16}
-                  spacing={20}
-                  roundedTop
-                  roundedBottom={false}
-                  rulesType="dashed"
-                  rulesColor={theme.border}
-                  rulesLength={screenWidth - 120}
-                  xAxisThickness={0}
-                  yAxisThickness={0}
-                  yAxisTextStyle={{
-                    color: theme.textSecondary,
-                    fontSize: 10,
-                  }}
-                  noOfSections={sectionCount}
-                  maxValue={chartMaxValue}
-                  stepValue={stepValue > 0 ? stepValue : 10} // Ensure stepValue is valid
-                  barBorderRadius={4}
-                  isAnimated
-                  animationDuration={500}
-                  yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
-                  formatYLabel={label => {
-                    if (!label) return '0';
-                    const value = parseFloat(label);
-                    if (isNaN(value)) return label;
+                // Centering Logic for 'Groww' style
+                // Available width approx screenWidth - 80 (padding + Y-axis)
+                // One month group width = 22 (inc) + 12 (gap) + 22 (exp) = 56
+                // + 32 spacing after group = 88 per month approx
+                // We calculate precise initialSpacing to center content.
+                (() => {
+                  // Chart container effective width
+                  // Card padding (20*2) + margins (20) ~ 60.
+                  // Y-Axis takes space? We set yAxisThickness=0 but labels exist.
+                  // Let's assume safe usable width is screenWidth - 100.
+                  const availableWidth = screenWidth - 100;
 
-                    const format = (
-                      val: number,
-                      divisor: number,
-                      suffix: string,
-                    ) => {
-                      const v = val / divisor;
-                      // Show decimal if not whole number, max 1 decimal
-                      return (
-                        (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + suffix
-                      );
+                  let barWidth = 22;
+                  let groupSpacing = 32;
+                  let internalSpacing = 10;
+                  let initialSpacing = 20;
+
+                  // Dynamic sizing based on data quantity
+                  const numGroups = Math.ceil(barChartData.length / 2);
+
+                  if (numGroups === 1) {
+                    // 1 Month: Make bars FAT (mimic user image)
+                    // available width split: 35% bar1, 10% gap, 35% bar2, 20% sides
+                    barWidth = availableWidth * 0.35;
+                    internalSpacing = availableWidth * 0.1;
+                    groupSpacing = 0; // No other groups
+
+                    // Center it
+                    const contentWidth = barWidth * 2 + internalSpacing;
+                    initialSpacing = (availableWidth - contentWidth) / 2;
+                  } else if (numGroups === 2) {
+                    // 2 Months: Wider bars but ensure they fit
+                    // Fit 2 groups: [B G B] -- S -- [B G B]
+                    // Total roughly 4 bars + 3 gaps.
+                    barWidth = availableWidth / 7.5;
+                    internalSpacing = barWidth / 2;
+                    groupSpacing = barWidth;
+
+                    const groupWidth = barWidth * 2 + internalSpacing;
+                    const totalWidth = groupWidth * 2 + groupSpacing;
+                    initialSpacing = (availableWidth - totalWidth) / 2;
+                  } else if (numGroups === 3) {
+                    // 3 Months: Needs to fit 3 groups
+                    // 6 bars total + gaps.
+                    // Factor ~11 (6 bars + 3 gaps + margins)
+                    barWidth = availableWidth / 11;
+                    internalSpacing = 5;
+                    groupSpacing = barWidth * 0.8;
+
+                    const groupWidth = barWidth * 2 + internalSpacing;
+                    // 3 groups, 2 spaces between them
+                    const totalWidth = groupWidth * 3 + groupSpacing * 2;
+                    initialSpacing = (availableWidth - totalWidth) / 2;
+                  } else if (numGroups === 4) {
+                    // 4 Months: Fits nicely with slightly tighter naming
+                    // 8 bars + 3 gaps between groups
+                    barWidth = availableWidth / 14;
+                    internalSpacing = 4;
+                    groupSpacing = 12;
+
+                    const groupWidth = barWidth * 2 + internalSpacing;
+                    // 4 groups, 3 spaces between them
+                    const totalWidth = groupWidth * 4 + groupSpacing * 3;
+                    initialSpacing = (availableWidth - totalWidth) / 2;
+                  } else {
+                    // Standard sizing for many months (>3)
+                    barWidth = 16;
+                    groupSpacing = 20;
+                    internalSpacing = 4;
+
+                    // Helper to calc width
+                    const gWidth = barWidth * 2 + internalSpacing;
+                    const totWidth =
+                      numGroups * gWidth +
+                      Math.max(0, numGroups - 1) * groupSpacing;
+
+                    // If still smaller than screen, center it
+                    if (totWidth < availableWidth) {
+                      initialSpacing = (availableWidth - totWidth) / 2;
+                    } else {
+                      initialSpacing = 20; // Default left padding for scrollable
+                    }
+                  }
+
+                  // Apply spacing and label centering to data
+                  const structuredData = barChartData.map((item, index) => {
+                    const isIncomeBar = index % 2 === 0;
+                    // For 1 or 2 months, we want the label centered across the group (Income + Expense)
+                    // Group width = (barWidth * 2) + internalSpacing.
+                    // We attach the label to the Income bar.
+                    const groupWidth = barWidth * 2 + internalSpacing;
+
+                    const newItem = {
+                      ...item,
+                      spacing: isIncomeBar ? internalSpacing : groupSpacing,
                     };
 
-                    if (value >= 10000000) {
-                      return format(value, 10000000, 'Cr');
-                    }
-                    if (value >= 100000) {
-                      return format(value, 100000, 'L');
-                    }
-                    if (value >= 1000) {
-                      return format(value, 1000, 'k');
-                    }
-                    return value.toFixed(0);
-                  }}
-                  renderTooltip={(item: any) => {
-                    return (
-                      <View
-                        style={{
-                          // Conditional positioning:
-                          // If value is close to top (e.g. > 70% of max), render inside/below the top (marginTop).
-                          // Otherwise render above (marginBottom).
-                          marginBottom:
-                            item.value > chartMaxValue * 0.7 ? 0 : 10,
-                          marginTop: item.value > chartMaxValue * 0.7 ? 40 : 0,
-                          marginLeft: -10,
-                          backgroundColor: theme.card,
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 4,
-                          borderWidth: 1,
-                          borderColor: theme.border,
-                          elevation: 20, // High elevation to ensure visibility
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.25,
-                          shadowRadius: 3.84,
-                          zIndex: 2000,
-                          position: 'absolute',
-                        }}
-                      >
-                        <Text
+                    // Update label component to center under the GROUP
+                    if (isIncomeBar) {
+                      newItem.labelComponent = () => (
+                        <View
                           style={{
-                            color: theme.text,
-                            fontSize: 10,
-                            fontWeight: 'bold',
+                            width: groupWidth,
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
                         >
-                          {formatCurrency(item.value, settings.currency, {
-                            maximumFractionDigits: 0,
-                          })}
-                        </Text>
-                      </View>
-                    );
-                  }}
-                />
+                          <Text
+                            style={{
+                              color: theme.textSecondary,
+                              fontSize: 10,
+                              textAlign: 'center',
+                              marginTop: 4,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {
+                              item.labelComponent().props.children.props
+                                .children
+                            }
+                          </Text>
+                        </View>
+                      );
+                    }
+                    return newItem;
+                  });
+
+                  return (
+                    <BarChart
+                      key={`bar-chart-${transactions.length}-${barWidth}`}
+                      data={structuredData}
+                      barWidth={barWidth}
+                      initialSpacing={Math.max(0, initialSpacing)}
+                      disableScroll
+                      roundedTop
+                      roundedBottom={false}
+                      rulesType="dashed"
+                      rulesColor={theme.border}
+                      rulesLength={screenWidth - 100}
+                      xAxisThickness={0}
+                      yAxisThickness={0}
+                      yAxisTextStyle={{
+                        color: theme.textSecondary,
+                        fontSize: 10,
+                      }}
+                      noOfSections={sectionCount}
+                      maxValue={chartMaxValue}
+                      stepValue={stepValue > 0 ? stepValue : 10}
+                      barBorderRadius={4}
+                      isAnimated
+                      animationDuration={500}
+                      yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
+                      formatYLabel={(label: string) => {
+                        if (!label) return '0';
+                        const value = parseFloat(label);
+                        if (isNaN(value)) return label;
+
+                        const format = (
+                          val: number,
+                          divisor: number,
+                          suffix: string,
+                        ) => {
+                          const v = val / divisor;
+                          return (
+                            (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + suffix
+                          );
+                        };
+
+                        if (value >= 10000000) {
+                          return format(value, 10000000, 'Cr');
+                        }
+                        if (value >= 100000) {
+                          return format(value, 100000, 'L');
+                        }
+                        if (value >= 1000) {
+                          return format(value, 1000, 'k');
+                        }
+                        return value.toFixed(0);
+                      }}
+                      renderTooltip={(item: any, index: number) => {
+                        const minTooltipWidth = 70;
+                        const tooltipWidth = Math.max(
+                          barWidth,
+                          minTooltipWidth,
+                        );
+
+                        // Shift tooltip left for the last bar to prevent cut-off
+                        const isLastBar = index === structuredData.length - 1;
+                        const isFirstBar = index === 0;
+
+                        let marginLeft = -(tooltipWidth / 2);
+                        if (isLastBar) {
+                          marginLeft = -(tooltipWidth - barWidth / 2);
+                        } else if (isFirstBar) {
+                          marginLeft = -(barWidth / 2);
+                        }
+
+                        return (
+                          <View
+                            style={{
+                              marginLeft: marginLeft,
+                              marginBottom:
+                                item.value > chartMaxValue * 0.7 ? 0 : 6,
+                              marginTop:
+                                item.value > chartMaxValue * 0.7 ? 20 : 0,
+                              width: tooltipWidth,
+                              backgroundColor: theme.text, // Inverted background
+                              paddingVertical: 2,
+                              borderRadius: 16,
+                              elevation: 4,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.15,
+                              shadowRadius: 2,
+                              zIndex: 2000,
+                              position: 'absolute',
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: theme.card, // Inverted text
+                                fontSize: 10,
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                              }}
+                              numberOfLines={1}
+                              adjustsFontSizeToFit
+                            >
+                              {getCurrencySymbol(settings.currency)}
+                              {item.value.toLocaleString()}
+                            </Text>
+                          </View>
+                        );
+                      }}
+                    />
+                  );
+                })()
               ) : (
                 <View style={[styles.noDataContainer, { height: 200 }]}>
                   <Text style={{ color: theme.textSecondary }}>
