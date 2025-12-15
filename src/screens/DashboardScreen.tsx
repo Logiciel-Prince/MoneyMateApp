@@ -546,6 +546,7 @@ const DashboardScreen = ({ navigation }: any) => {
 
               {barChartData.length > 0 ? (
                 <BarChart
+                  key={`bar-chart-${transactions.length}-${totalBalance}`}
                   data={barChartData}
                   barWidth={16}
                   spacing={20}
@@ -758,6 +759,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 {pieChartData.length > 0 ? (
                   <>
                     <PieChart
+                      key={`pie-chart-${transactions.length}-${totalExpenseForPie}-${pieMonthOffset}`}
                       data={pieChartData}
                       donut
                       showText={false} // Hide customized text on chart slices
