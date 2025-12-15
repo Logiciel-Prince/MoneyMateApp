@@ -9,7 +9,7 @@ import {
   Category,
   CategoryType,
 } from '../types';
-import { loadData, saveData, clearData } from '../utils/storage';
+import { loadData, saveData } from '../utils/storage';
 import { generateDemoData } from '../utils/demoData';
 
 interface DataContextType {
@@ -308,10 +308,17 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setAccounts([]);
     setBudgets([]);
     setGoals([]);
-    setCategories([]);
-    // Do not reset settings to default, users usually prefer to keep theme/currency
-    // setSettings(defaultSettings);
-    await clearData();
+    // Categories are preserved
+
+    const cleanedData: AppData = {
+      transactions: [],
+      accounts: [],
+      budgets: [],
+      goals: [],
+      settings,
+      categories,
+    };
+    await saveData(cleanedData);
   };
 
   const exportData = async (): Promise<string> => {
