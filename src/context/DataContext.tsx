@@ -7,6 +7,7 @@ import {
   Settings,
   AppData,
   Category,
+  CategoryType,
 } from '../types';
 import { loadData, saveData, clearData } from '../utils/storage';
 import { generateDemoData } from '../utils/demoData';
@@ -48,6 +49,107 @@ const defaultSettings: Settings = {
   language: 'en',
 };
 
+const defaultCategories: Category[] = [
+  // Income
+  {
+    id: 'cat_inc_1',
+    name: 'Salary',
+    type: CategoryType.INCOME,
+    color: '#10B981',
+    icon: 'wallet-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_inc_2',
+    name: 'Freelance',
+    type: CategoryType.INCOME,
+    color: '#06B6D4',
+    icon: 'briefcase-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_inc_3',
+    name: 'Investments',
+    type: CategoryType.INCOME,
+    color: '#3B82F6',
+    icon: 'trending-up-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_inc_4',
+    name: 'Gifts',
+    type: CategoryType.INCOME,
+    color: '#8B5CF6',
+    icon: 'gift-outline',
+    is_default: true,
+  },
+  // Expense
+  {
+    id: 'cat_exp_1',
+    name: 'Food',
+    type: CategoryType.EXPENSE,
+    color: '#F59E0B',
+    icon: 'restaurant-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_2',
+    name: 'Transport',
+    type: CategoryType.EXPENSE,
+    color: '#3B82F6',
+    icon: 'car-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_3',
+    name: 'Shopping',
+    type: CategoryType.EXPENSE,
+    color: '#EC4899',
+    icon: 'cart-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_4',
+    name: 'Bills',
+    type: CategoryType.EXPENSE,
+    color: '#EF4444',
+    icon: 'receipt-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_5',
+    name: 'Entertainment',
+    type: CategoryType.EXPENSE,
+    color: '#8B5CF6',
+    icon: 'game-controller-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_6',
+    name: 'Health',
+    type: CategoryType.EXPENSE,
+    color: '#EF4444',
+    icon: 'medkit-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_7',
+    name: 'Education',
+    type: CategoryType.EXPENSE,
+    color: '#FCD34D',
+    icon: 'school-outline',
+    is_default: true,
+  },
+  {
+    id: 'cat_exp_8',
+    name: 'Groceries',
+    type: CategoryType.EXPENSE,
+    color: '#10B981',
+    icon: 'basket-outline',
+    is_default: true,
+  },
+];
+
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -64,9 +166,14 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       setBudgets(data.budgets);
       setGoals(data.goals);
       setSettings(data.settings);
-      if (data.categories) {
+      if (data.categories && data.categories.length > 0) {
         setCategories(data.categories);
+      } else {
+        setCategories(defaultCategories);
       }
+    } else {
+      // First launch or no data
+      setCategories(defaultCategories);
     }
   };
 
@@ -286,4 +393,3 @@ export const useData = () => {
   }
   return context;
 };
-

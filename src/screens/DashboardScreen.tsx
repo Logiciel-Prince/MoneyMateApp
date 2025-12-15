@@ -180,18 +180,39 @@ const DashboardScreen = ({ navigation }: any) => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
   // --- Calculations ---
+  // --- Calculations ---
+  // Helper for safe date parsing
+  const parseDate = (dateStr: string) => {
+    // Try standard constructor
+    let d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+
+    // Attempt to handle "YYYY-MM-DD HH:mm" by replacing space with T
+    if (typeof dateStr === 'string' && dateStr.includes(' ')) {
+      d = new Date(dateStr.replace(' ', 'T'));
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    return new Date(); // Fallback to now (should not happen with good data)
+  };
+
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
-  const getMonthlyTotal = (type: 'income' | 'expense', date: Date) => {
-    return transactions
-      .filter(
-        t =>
-          t.type === type &&
-          new Date(t.date).getMonth() === date.getMonth() &&
-          new Date(t.date).getFullYear() === date.getFullYear(),
-      )
-      .reduce((sum, t) => sum + t.amount, 0);
-  };
+  const getMonthlyTotal = React.useCallback(
+    (type: 'income' | 'expense', date: Date) => {
+      return transactions
+        .filter(t => {
+          if (t.type !== type) return false;
+          const tDate = parseDate(t.date);
+          return (
+            tDate.getMonth() === date.getMonth() &&
+            tDate.getFullYear() === date.getFullYear()
+          );
+        })
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    },
+    [transactions],
+  );
 
   const currentDate = new Date();
   const prevDate = new Date();
@@ -210,78 +231,77 @@ const DashboardScreen = ({ navigation }: any) => {
   const incomeChange = calculateChange(monthlyIncome, prevMonthlyIncome);
   const expenseChange = calculateChange(monthlyExpense, prevMonthlyExpense);
 
-  // Bar Chart Data
-  // Bar Chart Data
-  // Bar Chart Data (Gifted Charts Format)
-  const barChartData: any[] = [];
-
-  let monthsBack = 5; // Default max 6 months
-  if (transactions.length > 0) {
-    const dates = transactions.map(t => new Date(t.date).getTime());
-    const minTimestamp = Math.min(...dates);
-    const minDate = new Date(minTimestamp);
-    const now = new Date();
-
-    const diffYears = now.getFullYear() - minDate.getFullYear();
-    const diffMonths = diffYears * 12 + now.getMonth() - minDate.getMonth();
-
-    // We show at most 6 months (indices 0 to 5)
-    monthsBack = Math.min(Math.max(diffMonths, 0), 5);
-  } else {
-    monthsBack = 0;
-  }
-
-  for (let i = monthsBack; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const label = d
-      .toLocaleString('default', { month: 'short' })
-      .substring(0, 3);
-    const inc = getMonthlyTotal('income', d);
-    const exp = getMonthlyTotal('expense', d);
-
-    // Grouped bars: We push two objects per label.
-    // First object has the label, second one doesn't (to group them visually under one label if we use spacing)
-    // Actually, gifted-charts handles grouped bars by just listing them sequentially with a spacing in between.
-    // To make them grouped per month, we can add spacing between the pair.
-
-    barChartData.push({
-      value: inc,
-      frontColor: (theme as any).mode === 'dark' ? '#4ade80' : '#16a34a',
-      spacing: 6,
-      labelComponent: () => (
-        <View style={{ width: 50, marginLeft: 6 }}>
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 10,
-              textAlign: 'center',
-            }}
-            numberOfLines={1}
-          >
-            {label}
-          </Text>
-        </View>
-      ),
-    });
-    barChartData.push({
-      value: exp,
-      frontColor: (theme as any).mode === 'dark' ? '#f87171' : '#dc2626',
-      spacing: 20, // larger spacing after the group
-    });
-  }
-
-  // Calculate Max Value and Sections for Bar Chart
   const sectionCount = 5;
-  const rawMax = Math.max(...barChartData.map((d: any) => d.value || 0), 100);
 
-  // User wants bars to touch top, so max value IS the raw max
-  // But we need clean steps if possible.
-  // If we force max value = raw max, grid lines might be at odd decimal places.
-  // The user prioritizes "touching highest point".
+  // Bar Chart Data
+  const { barChartData, chartMaxValue, stepValue } = useMemo(() => {
+    const data: any[] = [];
+    let monthsBack = 5; // Default max 6 months
 
-  const chartMaxValue = rawMax;
-  const stepValue = rawMax / sectionCount;
+    if (transactions.length > 0) {
+      const dates = transactions
+        .map(t => parseDate(t.date).getTime())
+        .filter(d => !isNaN(d));
+
+      if (dates.length > 0) {
+        const minTimestamp = Math.min(...dates);
+        const minDate = new Date(minTimestamp);
+        const now = new Date();
+
+        const diffYears = now.getFullYear() - minDate.getFullYear();
+        const diffMonths = diffYears * 12 + now.getMonth() - minDate.getMonth();
+
+        // We show at most 6 months (indices 0 to 5)
+        monthsBack = Math.min(Math.max(diffMonths, 0), 5);
+      } else {
+        monthsBack = 0;
+      }
+    } else {
+      monthsBack = 0;
+    }
+
+    for (let i = monthsBack; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const label = d
+        .toLocaleString('default', { month: 'short' })
+        .substring(0, 3);
+      const inc = getMonthlyTotal('income', d);
+      const exp = getMonthlyTotal('expense', d);
+
+      data.push({
+        value: inc,
+        frontColor: (theme as any).mode === 'dark' ? '#4ade80' : '#16a34a',
+        spacing: 6,
+        labelComponent: () => (
+          <View style={{ width: 50, marginLeft: 6 }}>
+            <Text
+              style={{
+                color: theme.textSecondary,
+                fontSize: 10,
+                textAlign: 'center',
+              }}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          </View>
+        ),
+      });
+      data.push({
+        value: exp,
+        frontColor: (theme as any).mode === 'dark' ? '#f87171' : '#dc2626',
+        spacing: 20, // larger spacing after the group
+      });
+    }
+
+    const sectionCount = 5;
+    const rawMax = Math.max(...data.map((d: any) => d.value || 0), 100);
+    const maxValue = rawMax;
+    const step = rawMax / sectionCount;
+
+    return { barChartData: data, chartMaxValue: maxValue, stepValue: step };
+  }, [transactions, theme.mode, getMonthlyTotal]);
 
   // Pie Chart Data
   const pieDisplayDate = new Date();
@@ -300,7 +320,10 @@ const DashboardScreen = ({ navigation }: any) => {
 
     const grouped: { [key: string]: number } = {};
     monthlyExpenses.forEach(t => {
-      grouped[t.category] = (grouped[t.category] || 0) + t.amount;
+      const amt = Number(t.amount) || 0;
+      if (amt > 0) {
+        grouped[t.category] = (grouped[t.category] || 0) + amt;
+      }
     });
 
     // Consistent color palette
@@ -492,13 +515,23 @@ const DashboardScreen = ({ navigation }: any) => {
             </View>
 
             {/* Bar Chart */}
-            <View style={[styles.card, { backgroundColor: theme.card }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.card,
+                  overflow: 'visible',
+                  zIndex: 10,
+                },
+              ]}
+            >
               <View
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   marginBottom: 20,
+                  zIndex: 20,
                 }}
               >
                 <Text
@@ -511,77 +544,105 @@ const DashboardScreen = ({ navigation }: any) => {
                 </Text>
               </View>
 
-              <BarChart
-                data={barChartData}
-                barWidth={16}
-                spacing={20}
-                roundedTop
-                roundedBottom={false}
-                rulesType="dashed"
-                rulesColor={theme.border}
-                rulesLength={screenWidth - 120} // Adjust rules length to prevent overflow
-                xAxisThickness={0}
-                yAxisThickness={0}
-                yAxisTextStyle={{
-                  color: theme.textSecondary,
-                  fontSize: 10,
-                }}
-                noOfSections={sectionCount}
-                maxValue={chartMaxValue}
-                stepValue={stepValue}
-                barBorderRadius={4}
-                isAnimated
-                animationDuration={500}
-                yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
-                formatYLabel={label => {
-                  const value = parseFloat(label); // Use parseFloat to handle potential strings
-                  if (isNaN(value)) return label;
+              {barChartData.length > 0 ? (
+                <BarChart
+                  data={barChartData}
+                  barWidth={16}
+                  spacing={20}
+                  roundedTop
+                  roundedBottom={false}
+                  rulesType="dashed"
+                  rulesColor={theme.border}
+                  rulesLength={screenWidth - 120}
+                  xAxisThickness={0}
+                  yAxisThickness={0}
+                  yAxisTextStyle={{
+                    color: theme.textSecondary,
+                    fontSize: 10,
+                  }}
+                  noOfSections={sectionCount}
+                  maxValue={chartMaxValue}
+                  stepValue={stepValue > 0 ? stepValue : 10} // Ensure stepValue is valid
+                  barBorderRadius={4}
+                  isAnimated
+                  animationDuration={500}
+                  yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
+                  formatYLabel={label => {
+                    if (!label) return '0';
+                    const value = parseFloat(label);
+                    if (isNaN(value)) return label;
 
-                  if (value >= 10000000) {
-                    return (value / 10000000).toFixed(0) + 'Cr';
-                  }
-                  if (value >= 100000) {
-                    return (value / 100000).toFixed(0) + 'L';
-                  }
-                  if (value >= 1000) {
-                    return (value / 1000).toFixed(0) + 'k';
-                  }
-                  return value.toFixed(0);
-                }}
-                renderTooltip={(item: any) => {
-                  return (
-                    <View
-                      style={{
-                        marginBottom: 5,
-                        marginLeft: -10,
-                        backgroundColor: theme.card,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 4,
-                        borderWidth: 1,
-                        borderColor: theme.border,
-                        elevation: 5,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 3.84,
-                      }}
-                    >
-                      <Text
+                    const format = (
+                      val: number,
+                      divisor: number,
+                      suffix: string,
+                    ) => {
+                      const v = val / divisor;
+                      // Show decimal if not whole number, max 1 decimal
+                      return (
+                        (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + suffix
+                      );
+                    };
+
+                    if (value >= 10000000) {
+                      return format(value, 10000000, 'Cr');
+                    }
+                    if (value >= 100000) {
+                      return format(value, 100000, 'L');
+                    }
+                    if (value >= 1000) {
+                      return format(value, 1000, 'k');
+                    }
+                    return value.toFixed(0);
+                  }}
+                  renderTooltip={(item: any) => {
+                    return (
+                      <View
                         style={{
-                          color: theme.text,
-                          fontSize: 10,
-                          fontWeight: 'bold',
+                          // Conditional positioning:
+                          // If value is close to top (e.g. > 70% of max), render inside/below the top (marginTop).
+                          // Otherwise render above (marginBottom).
+                          marginBottom:
+                            item.value > chartMaxValue * 0.7 ? 0 : 10,
+                          marginTop: item.value > chartMaxValue * 0.7 ? 40 : 0,
+                          marginLeft: -10,
+                          backgroundColor: theme.card,
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 4,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                          elevation: 20, // High elevation to ensure visibility
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.25,
+                          shadowRadius: 3.84,
+                          zIndex: 2000,
+                          position: 'absolute',
                         }}
                       >
-                        {formatCurrency(item.value, settings.currency, {
-                          maximumFractionDigits: 0,
-                        })}
-                      </Text>
-                    </View>
-                  );
-                }}
-              />
+                        <Text
+                          style={{
+                            color: theme.text,
+                            fontSize: 10,
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {formatCurrency(item.value, settings.currency, {
+                            maximumFractionDigits: 0,
+                          })}
+                        </Text>
+                      </View>
+                    );
+                  }}
+                />
+              ) : (
+                <View style={[styles.noDataContainer, { height: 200 }]}>
+                  <Text style={{ color: theme.textSecondary }}>
+                    No data available
+                  </Text>
+                </View>
+              )}
               {/* Legend for Bar Chart */}
               <View
                 style={{
