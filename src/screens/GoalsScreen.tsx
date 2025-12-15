@@ -13,11 +13,13 @@ import {useData} from '../context/DataContext';
 import {lightTheme, darkTheme} from '../theme';
 import {Goal} from '../types';
 import AddGoalModal from '../components/AddGoalModal';
+import { formatCurrency } from '../utils/currency';
 
 const GoalsScreen = () => {
   const systemColorScheme = useColorScheme();
-  const {goals, addGoal, updateGoal, deleteGoal, settings} = useData();
-  const activeThemeType = settings.theme === 'system' ? systemColorScheme : settings.theme;
+  const { goals, addGoal, updateGoal, deleteGoal, settings } = useData();
+  const activeThemeType =
+    settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -43,7 +45,7 @@ const GoalsScreen = () => {
 
   const handleDelete = (id: string) => {
     Alert.alert('Delete Goal', 'Are you sure you want to delete this goal?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
@@ -57,7 +59,7 @@ const GoalsScreen = () => {
       'Add Funds',
       `How much would you like to add to "${goal.name}"?`,
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Add',
           onPress: amount => {
@@ -76,7 +78,7 @@ const GoalsScreen = () => {
     );
   };
 
-  const renderGoal = ({item}: {item: Goal}) => {
+  const renderGoal = ({ item }: { item: Goal }) => {
     const percentage = (item.currentAmount / item.targetAmount) * 100;
     const isComplete = percentage >= 100;
     const daysLeft = Math.ceil(
@@ -86,20 +88,22 @@ const GoalsScreen = () => {
 
     return (
       <TouchableOpacity
-        style={[styles.goalCard, {backgroundColor: theme.card}]}
-        onLongPress={() => handleEdit(item)}>
+        style={[styles.goalCard, { backgroundColor: theme.card }]}
+        onLongPress={() => handleEdit(item)}
+      >
         <View style={styles.goalHeader}>
           <View style={styles.goalLeft}>
-            <Text style={[styles.goalName, {color: theme.text}]}>
+            <Text style={[styles.goalName, { color: theme.text }]}>
               {item.name}
             </Text>
-            <Text style={[styles.category, {color: theme.textSecondary}]}>
+            <Text style={[styles.category, { color: theme.textSecondary }]}>
               {item.category}
             </Text>
           </View>
           <TouchableOpacity
             onPress={() => handleDelete(item.id)}
-            style={styles.deleteButton}>
+            style={styles.deleteButton}
+          >
             <Icon name="trash-outline" size={18} color={theme.danger} />
           </TouchableOpacity>
         </View>
@@ -107,16 +111,16 @@ const GoalsScreen = () => {
         {/* Progress */}
         <View style={styles.progressSection}>
           <View style={styles.amountRow}>
-            <Text style={[styles.currentAmount, {color: theme.primary}]}>
-              ${item.currentAmount.toFixed(2)}
+            <Text style={[styles.currentAmount, { color: theme.primary }]}>
+              {formatCurrency(item.currentAmount, settings.currency)}
             </Text>
-            <Text style={[styles.targetAmount, {color: theme.textSecondary}]}>
-              / ${item.targetAmount.toFixed(2)}
+            <Text style={[styles.targetAmount, { color: theme.textSecondary }]}>
+              / {formatCurrency(item.targetAmount, settings.currency)}
             </Text>
           </View>
 
           {/* Progress Bar */}
-          <View style={[styles.progressBar, {backgroundColor: theme.border}]}>
+          <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
             <View
               style={[
                 styles.progressFill,
@@ -132,11 +136,12 @@ const GoalsScreen = () => {
             <Text
               style={[
                 styles.percentage,
-                {color: isComplete ? theme.success : theme.textSecondary},
-              ]}>
+                { color: isComplete ? theme.success : theme.textSecondary },
+              ]}
+            >
               {percentage.toFixed(1)}% {isComplete && '✓ Complete'}
             </Text>
-            <Text style={[styles.deadline, {color: theme.textSecondary}]}>
+            <Text style={[styles.deadline, { color: theme.textSecondary }]}>
               {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
             </Text>
           </View>
@@ -145,8 +150,9 @@ const GoalsScreen = () => {
         {/* Add Funds Button */}
         {!isComplete && (
           <TouchableOpacity
-            style={[styles.addFundsButton, {backgroundColor: theme.primary}]}
-            onPress={() => handleAddFunds(item)}>
+            style={[styles.addFundsButton, { backgroundColor: theme.primary }]}
+            onPress={() => handleAddFunds(item)}
+          >
             <Icon name="add-circle-outline" size={20} color="#FFF" />
             <Text style={styles.addFundsText}>Add Funds</Text>
           </TouchableOpacity>
@@ -156,7 +162,7 @@ const GoalsScreen = () => {
   };
 
   return (
-    <View style={[styles.container, {backgroundColor: theme.background}]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={goals}
         renderItem={renderGoal}
@@ -165,10 +171,10 @@ const GoalsScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="trophy-outline" size={64} color={theme.textSecondary} />
-            <Text style={[styles.emptyText, {color: theme.textSecondary}]}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               No goals yet
             </Text>
-            <Text style={[styles.emptySubtext, {color: theme.textSecondary}]}>
+            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
               Tap the + button to create your first savings goal
             </Text>
           </View>
@@ -177,11 +183,12 @@ const GoalsScreen = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={[styles.fab, {backgroundColor: theme.primary}]}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={() => {
           setEditingGoal(undefined);
           setModalVisible(true);
-        }}>
+        }}
+      >
         <Icon name="add" size={28} color="#FFF" />
       </TouchableOpacity>
 

@@ -14,6 +14,7 @@ import { useData } from '../context/DataContext';
 import { lightTheme, darkTheme } from '../theme';
 import { Budget } from '../types';
 import AddBudgetModal from '../components/AddBudgetModal';
+import { formatCurrency } from '../utils/currency';
 
 const BudgetsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -153,7 +154,7 @@ const BudgetsScreen = () => {
           </View>
           <View style={styles.budgetRight}>
             <Text style={[styles.amount, { color: theme.text }]}>
-              ${currentSpent.toFixed(2)} / ${item.amount.toFixed(2)}
+              {formatCurrency(currentSpent, settings.currency)} / {formatCurrency(item.amount, settings.currency)}
             </Text>
             <TouchableOpacity
               onPress={() => handleDelete(item.id)}
@@ -245,20 +246,20 @@ const BudgetsScreen = () => {
         style={styles.overviewCard}
       >
         <Text style={styles.overviewTitle}>Total Budget</Text>
-        <Text style={styles.overviewAmount}>${totalRemaining.toFixed(2)}</Text>
+        <Text style={styles.overviewAmount}>{formatCurrency(totalRemaining, settings.currency)}</Text>
         <Text style={styles.overviewSubtitle}>Remaining</Text>
 
         <View style={styles.overviewRow}>
           <View>
             <Text style={styles.overviewLabel}>Budgeted</Text>
             <Text style={styles.overviewValue}>
-              ${totalBudgetAmount.toFixed(2)}
+              {formatCurrency(totalBudgetAmount, settings.currency)}
             </Text>
           </View>
           <View style={styles.alignRight}>
             <Text style={styles.overviewLabel}>Spent</Text>
             <Text style={styles.overviewValue}>
-              ${totalSpentAmount.toFixed(2)}
+              {formatCurrency(totalSpentAmount, settings.currency)}
             </Text>
           </View>
         </View>
