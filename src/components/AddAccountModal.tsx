@@ -49,15 +49,41 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
     editAccount?.balance.toString() || '0',
   );
 
+  // Error states
+  const [errors, setErrors] = useState({
+    name: '',
+    balance: '',
+  });
+
   const handleSave = () => {
-    if (!name || !balance) {
-      return;
+    const newErrors = { name: '', balance: '' };
+    let hasError = false;
+
+    if (!name || name.trim() === '') {
+      newErrors.name = 'Please enter an account name';
+      hasError = true;
     }
 
+    if (!balance || balance.trim() === '') {
+      newErrors.balance = 'Please enter a balance';
+      hasError = true;
+    } else {
+      const parsedBalance = parseFloat(balance);
+      if (isNaN(parsedBalance)) {
+        newErrors.balance = 'Please enter a valid number';
+        hasError = true;
+      }
+    }
+
+    setErrors(newErrors);
+    if (hasError) return;
+
+    const parsedBalance = parseFloat(balance);
+
     onSave({
-      name,
+      name: name.trim(),
       type,
-      balance: parseFloat(balance),
+      balance: parsedBalance,
       currency: settings.currency, // Use settings currency
     });
 
@@ -65,7 +91,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
     setName('');
     setType('bank');
     setBalance('0');
-    // Currency is derived from settings, no state needed
+    setErrors({ name: '', balance: '' });
     onClose();
   };
 
@@ -116,6 +142,11 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 onChangeText={setName}
               />
             </View>
+            {errors.name ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.name}
+              </Text>
+            ) : null}
 
             {/* Account Type */}
             <Text style={[styles.label, { color: theme.textSecondary }]}>
@@ -186,6 +217,11 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 }}
               />
             </View>
+            {errors.balance ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.balance}
+              </Text>
+            ) : null}
 
             {/* Currency Input Removed - using default settings.currency */}
           </ScrollView>
@@ -318,6 +354,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

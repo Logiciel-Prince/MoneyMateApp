@@ -65,6 +65,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     editTransaction?.toAccountId || '',
   );
 
+  // Error states
+  const [errors, setErrors] = useState({
+    amount: '',
+    category: '',
+    accountId: '',
+    toAccountId: '',
+  });
+
   // Auto-fill date when modal opens
 
   // Filter categories based on transaction type
@@ -99,25 +107,65 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   }, [accounts]);
 
   const handleSave = () => {
-    if (!amount || !accountId) {
-      return;
+    // Clear previous errors
+    const newErrors = {
+      amount: '',
+      category: '',
+      accountId: '',
+      toAccountId: '',
+    };
+
+    let hasError = false;
+
+    // Validate amount
+    if (!amount || amount.trim() === '') {
+      newErrors.amount = 'Please enter an amount';
+      hasError = true;
+    } else {
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        newErrors.amount = 'Please enter a valid positive amount';
+        hasError = true;
+      }
     }
 
+    // Validate account
+    if (!accountId) {
+      newErrors.accountId = 'Please select an account';
+      hasError = true;
+    }
+
+    // Validate category for income/expense
     if (type !== 'transfer' && !category) {
+      newErrors.category = 'Please select a category';
+      hasError = true;
+    }
+
+    // Validate transfer fields
+    if (type === 'transfer') {
+      if (!toAccountId) {
+        newErrors.toAccountId = 'Please select a destination account';
+        hasError = true;
+      } else if (accountId === toAccountId) {
+        newErrors.toAccountId = 'Source and destination must be different';
+        hasError = true;
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (hasError) {
       return;
     }
 
-    if (type === 'transfer' && !toAccountId) {
-      return;
-    }
-
+    const parsedAmount = parseFloat(amount);
     const transactionDate = editTransaction
       ? editTransaction.date
       : getFormattedDateTime();
 
     onSave({
       type,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       category: type === 'transfer' ? 'Transfer' : category,
       description,
       date: transactionDate,
@@ -131,6 +179,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setDescription('');
     setAccountId(accounts[0]?.id || '');
     setToAccountId('');
+    setErrors({
+      amount: '',
+      category: '',
+      accountId: '',
+      toAccountId: '',
+    });
     onClose();
   };
 
@@ -258,6 +312,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 onChangeText={setAmount}
               />
             </View>
+            {errors.amount ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.amount}
+              </Text>
+            ) : null}
 
             {/* Category - Hide for Transfer */}
             {type !== 'transfer' && (
@@ -329,6 +388,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     },
                   ]}
                 />
+                {errors.category ? (
+                  <Text style={[styles.errorText, { color: theme.danger }]}>
+                    {errors.category}
+                  </Text>
+                ) : null}
               </>
             )}
 
@@ -419,6 +483,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 },
               ]}
             />
+            {errors.accountId ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.accountId}
+              </Text>
+            ) : null}
 
             {/* To Account - Only for Transfer */}
             {type === 'transfer' && (
@@ -485,6 +554,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     },
                   ]}
                 />
+                {errors.toAccountId ? (
+                  <Text style={[styles.errorText, { color: theme.danger }]}>
+                    {errors.toAccountId}
+                  </Text>
+                ) : null}
               </>
             )}
           </ScrollView>
@@ -652,6 +726,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

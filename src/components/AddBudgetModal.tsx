@@ -41,6 +41,12 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
     editBudget?.period || 'monthly',
   );
 
+  // Error states
+  const [errors, setErrors] = useState({
+    category: '',
+    amount: '',
+  });
+
   // Filter categories for Expense type
   const availableCategories = useMemo(() => {
     if (!categories || categories.length === 0) {
@@ -61,13 +67,43 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
   }, [categories]);
 
   const handleSave = () => {
-    if (!category || !amount) {
+    // Clear previous errors
+    const newErrors = {
+      category: '',
+      amount: '',
+    };
+
+    let hasError = false;
+
+    // Validate category
+    if (!category || category.trim() === '') {
+      newErrors.category = 'Please select a category';
+      hasError = true;
+    }
+
+    // Validate amount
+    if (!amount || amount.trim() === '') {
+      newErrors.amount = 'Please enter a budget amount';
+      hasError = true;
+    } else {
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        newErrors.amount = 'Please enter a valid positive amount';
+        hasError = true;
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (hasError) {
       return;
     }
 
+    const parsedAmount = parseFloat(amount);
+
     onSave({
       category,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       spent: editBudget?.spent || 0, // Keep existing spent or 0
       period,
     });
@@ -76,6 +112,10 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
     setCategory('');
     setAmount('');
     setPeriod('monthly');
+    setErrors({
+      category: '',
+      amount: '',
+    });
     onClose();
   };
 
@@ -145,6 +185,7 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                       { backgroundColor: item.color },
                     ]}
                   />
+
                   <Text
                     style={[styles.dropdownItemText, { color: theme.text }]}
                   >
@@ -163,6 +204,11 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                 },
               ]}
             />
+            {errors.category ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.category}
+              </Text>
+            ) : null}
 
             {/* Budget Amount */}
             <Text style={[styles.label, { color: theme.textSecondary }]}>
@@ -192,6 +238,11 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
                 onChangeText={setAmount}
               />
             </View>
+            {errors.amount ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.amount}
+              </Text>
+            ) : null}
 
             {/* Period */}
             <Text style={[styles.label, { color: theme.textSecondary }]}>
@@ -404,6 +455,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

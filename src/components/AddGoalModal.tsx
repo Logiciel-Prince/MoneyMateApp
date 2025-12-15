@@ -46,6 +46,14 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   const [deadline, setDeadline] = useState(editGoal?.deadline || '');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  // Error states
+  const [errors, setErrors] = useState({
+    name: '',
+    targetAmount: '',
+    currentAmount: '',
+    deadline: '',
+  });
+
   const handleNumericInput = (
     text: string,
     setter: (value: string) => void,
@@ -69,14 +77,70 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
   };
 
   const handleSave = () => {
-    if (!name || !targetAmount || !deadline) {
+    // Clear previous errors
+    const newErrors = {
+      name: '',
+      targetAmount: '',
+      currentAmount: '',
+      deadline: '',
+    };
+
+    let hasError = false;
+
+    // Validate goal name
+    if (!name || name.trim() === '') {
+      newErrors.name = 'Please enter a goal name';
+      hasError = true;
+    }
+
+    // Validate target amount
+    if (!targetAmount || targetAmount.trim() === '') {
+      newErrors.targetAmount = 'Please enter a target amount';
+      hasError = true;
+    } else {
+      const parsedTargetAmount = parseFloat(targetAmount);
+      if (isNaN(parsedTargetAmount) || parsedTargetAmount <= 0) {
+        newErrors.targetAmount = 'Please enter a valid positive target amount';
+        hasError = true;
+      }
+    }
+
+    // Validate current amount
+    const parsedCurrentAmount = parseFloat(currentAmount || '0');
+    if (isNaN(parsedCurrentAmount) || parsedCurrentAmount < 0) {
+      newErrors.currentAmount = 'Please enter a valid current amount';
+      hasError = true;
+    }
+
+    if (targetAmount && parsedCurrentAmount > parseFloat(targetAmount || '0')) {
+      newErrors.currentAmount = 'Current amount cannot exceed target amount';
+      hasError = true;
+    }
+
+    // Validate deadline
+    if (!deadline || deadline.trim() === '') {
+      newErrors.deadline = 'Please select a deadline';
+      hasError = true;
+    } else {
+      const deadlineDate = new Date(deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      if (deadlineDate < today) {
+        newErrors.deadline = 'Deadline must be today or in the future';
+        hasError = true;
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (hasError) {
       return;
     }
 
     onSave({
-      name,
+      name: name.trim(),
       targetAmount: parseFloat(targetAmount),
-      currentAmount: parseFloat(currentAmount),
+      currentAmount: parsedCurrentAmount,
       deadline,
       category: 'Savings', // Default category
     });
@@ -86,6 +150,12 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
     setTargetAmount('');
     setCurrentAmount('0');
     setDeadline('');
+    setErrors({
+      name: '',
+      targetAmount: '',
+      currentAmount: '',
+      deadline: '',
+    });
     onClose();
   };
 
@@ -136,6 +206,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                 onChangeText={setName}
               />
             </View>
+            {errors.name ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.name}
+              </Text>
+            ) : null}
 
             {/* Target Amount */}
             <Text style={[styles.label, { color: theme.textSecondary }]}>
@@ -165,6 +240,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                 onChangeText={text => handleNumericInput(text, setTargetAmount)}
               />
             </View>
+            {errors.targetAmount ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.targetAmount}
+              </Text>
+            ) : null}
 
             {/* Current Amount */}
             <Text style={[styles.label, { color: theme.textSecondary }]}>
@@ -196,6 +276,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                 }
               />
             </View>
+            {errors.currentAmount ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.currentAmount}
+              </Text>
+            ) : null}
 
             {/* Deadline */}
             <Text style={[styles.label, { color: theme.textSecondary }]}>
@@ -233,6 +318,11 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
                 </Text>
               </TouchableOpacity>
             </View>
+            {errors.deadline ? (
+              <Text style={[styles.errorText, { color: theme.danger }]}>
+                {errors.deadline}
+              </Text>
+            ) : null}
 
             {showDatePicker && (
               <DateTimePicker
@@ -388,6 +478,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 
