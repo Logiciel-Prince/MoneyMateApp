@@ -211,10 +211,27 @@ const DashboardScreen = ({ navigation }: any) => {
   const expenseChange = calculateChange(monthlyExpense, prevMonthlyExpense);
 
   // Bar Chart Data
+  // Bar Chart Data
   // Bar Chart Data (Gifted Charts Format)
   const barChartData: any[] = [];
 
-  for (let i = 5; i >= 0; i--) {
+  let monthsBack = 5; // Default max 6 months
+  if (transactions.length > 0) {
+    const dates = transactions.map(t => new Date(t.date).getTime());
+    const minTimestamp = Math.min(...dates);
+    const minDate = new Date(minTimestamp);
+    const now = new Date();
+
+    const diffYears = now.getFullYear() - minDate.getFullYear();
+    const diffMonths = diffYears * 12 + now.getMonth() - minDate.getMonth();
+
+    // We show at most 6 months (indices 0 to 5)
+    monthsBack = Math.min(Math.max(diffMonths, 0), 5);
+  } else {
+    monthsBack = 0;
+  }
+
+  for (let i = monthsBack; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
     const label = d
@@ -502,6 +519,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 roundedBottom={false}
                 rulesType="dashed"
                 rulesColor={theme.border}
+                rulesLength={screenWidth - 120} // Adjust rules length to prevent overflow
                 xAxisThickness={0}
                 yAxisThickness={0}
                 yAxisTextStyle={{
