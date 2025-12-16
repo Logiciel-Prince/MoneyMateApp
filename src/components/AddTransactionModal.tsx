@@ -371,6 +371,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   labelField="label"
                   valueField="value"
                   placeholder="Select category"
+                  dropdownPosition="top"
                   value={category}
                   onChange={item => {
                     setCategory(item.value);
@@ -511,6 +512,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   borderColor: theme.border,
                 },
               ]}
+              activeColor={theme.card}
+              itemContainerStyle={{
+                backgroundColor: theme.background,
+              }}
             />
             {errors.accountId ? (
               <Text style={[styles.errorText, { color: theme.danger }]}>
@@ -582,6 +587,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       borderColor: theme.border,
                     },
                   ]}
+                  activeColor={theme.card}
+                  itemContainerStyle={{
+                    backgroundColor: theme.background,
+                  }}
                 />
                 {errors.toAccountId ? (
                   <Text style={[styles.errorText, { color: theme.danger }]}>
