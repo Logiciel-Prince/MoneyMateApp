@@ -8,6 +8,8 @@ import {
   Dimensions,
   TouchableOpacity,
   SafeAreaView,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -161,6 +163,7 @@ const DashboardScreen = ({ navigation }: any) => {
     settings,
     updateGoal,
     updateAccount,
+    scanSmsAndAddTransactions,
   } = useData();
 
   const activeThemeType =
@@ -175,6 +178,26 @@ const DashboardScreen = ({ navigation }: any) => {
   // ...
 
   const [pieMonthOffset, setPieMonthOffset] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const added = await scanSmsAndAddTransactions();
+      if (added > 0) {
+        Alert.alert(
+          'Sync Complete',
+          `Added ${added} new transactions found in SMS.`,
+        );
+      }
+    } catch (e) {
+      console.error('Refresh failed', e);
+      Alert.alert('Error', 'Failed to scan SMS');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [scanSmsAndAddTransactions]);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -414,6 +437,14 @@ const DashboardScreen = ({ navigation }: any) => {
       <ScrollView
         style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.primary]}
+            tintColor={theme.primary}
+          />
+        }
       >
         {/* Dashboard Title Header */}
         <View style={styles.header}>

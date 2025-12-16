@@ -87,6 +87,7 @@ export interface Settings {
   theme: 'light' | 'dark' | 'system';
   currency: string;
   language: string;
+  lastSmsSync?: number;
 }
 
 export interface AppData {

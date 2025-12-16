@@ -1,5 +1,9 @@
 import React, {createContext, useContext, useState, useEffect, useCallback, ReactNode} from 'react';
 import {
+  requestSmsPermission,
+  fetchTransactionSms,
+} from '../services/smsService';
+import {
   Transaction,
   Account,
   Budget,
@@ -39,6 +43,7 @@ interface DataContextType {
   clearAllData: () => Promise<void>;
   exportData: () => Promise<string>;
   importData: (jsonString: string) => Promise<boolean>;
+  scanSmsAndAddTransactions: () => Promise<number>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -333,6 +338,94 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     return JSON.stringify(data, null, 2);
   };
 
+  const scanSmsAndAddTransactions = async (): Promise<number> => {
+    const granted = await requestSmsPermission();
+    if (!granted) return 0;
+
+    const lastSync = settings.lastSmsSync || 0;
+    // Default to 30 days ago if never synced
+    const startTime =
+      lastSync > 0 ? lastSync : Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+    let parsedList: any[] = [];
+    try {
+      parsedList = await fetchTransactionSms(startTime);
+    } catch (e) {
+      console.error('Failed to fetch SMS', e);
+      return 0;
+    }
+
+    if (parsedList.length === 0) {
+      updateSettings({ lastSmsSync: Date.now() });
+      return 0;
+    }
+
+    // Default account strategy: First Account (usually Bank or Cash)
+    // In future, try to match account name.
+    const defaultAccount = accounts[0];
+    if (!defaultAccount) {
+      return 0;
+    }
+
+    const newTransactions: Transaction[] = [];
+    let addedCount = 0;
+
+    // We need current transaction list to check duplicates.
+    // Uses 'transactions' from state scope.
+    // ideally we should use functional update or ref if we want absolute latest,
+    // but transactions state is likely fresh enough for this user action.
+
+    for (const sms of parsedList) {
+      // Check for duplicates
+      const exists = transactions.some(
+        t =>
+          t.amount === sms.amount &&
+          t.type === sms.type &&
+          // Check date mostly. SMS date is accurate.
+          Math.abs(new Date(t.date).getTime() - sms.date) < 60000, // 1 min buffer
+      );
+
+      if (!exists) {
+        const newTx: Transaction = {
+          id: Math.random().toString(36).substr(2, 9),
+          type: sms.type,
+          amount: sms.amount,
+          category: 'Uncategorized',
+          description: sms.merchant || sms.description || 'SMS Transaction',
+          date: new Date(sms.date).toISOString(),
+          accountId: defaultAccount.id,
+        };
+        newTransactions.push(newTx);
+        addedCount++;
+      }
+    }
+
+    if (addedCount > 0) {
+      setTransactions(prev => [...prev, ...newTransactions]);
+
+      setAccounts(prevAccounts => {
+        let updatedAccounts = [...prevAccounts];
+        newTransactions.forEach(tx => {
+          updatedAccounts = updatedAccounts.map(acc => {
+            if (acc.id === tx.accountId) {
+              if (tx.type === 'income') {
+                return { ...acc, balance: acc.balance + tx.amount };
+              } else if (tx.type === 'expense') {
+                return { ...acc, balance: acc.balance - tx.amount };
+              }
+            }
+            return acc;
+          });
+        });
+        return updatedAccounts;
+      });
+    }
+
+    updateSettings({ lastSmsSync: Date.now() });
+
+    return addedCount;
+  };
+
   const importData = async (jsonString: string): Promise<boolean> => {
     try {
       const data = JSON.parse(jsonString) as AppData;
@@ -386,6 +479,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         clearAllData,
         exportData,
         importData,
+        scanSmsAndAddTransactions,
       }}
     >
       {children}

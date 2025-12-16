@@ -7,6 +7,7 @@ import {
   useColorScheme,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
@@ -24,6 +25,7 @@ const TransactionsScreen = () => {
     updateTransaction,
     deleteTransaction,
     settings,
+    scanSmsAndAddTransactions,
   } = useData();
 
   const activeThemeType =
@@ -34,6 +36,21 @@ const TransactionsScreen = () => {
   const [editingTransaction, setEditingTransaction] = useState<
     Transaction | undefined
   >(undefined);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const count = await scanSmsAndAddTransactions();
+      if (count > 0) {
+        Alert.alert('SMS Scanned', `Added ${count} new transactions from SMS.`);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [scanSmsAndAddTransactions]);
 
   const sections = useMemo(() => {
     const sorted = [...transactions].sort(
@@ -235,6 +252,14 @@ const TransactionsScreen = () => {
               Tap the + button to add your first transaction
             </Text>
           </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.primary]}
+            tintColor={theme.primary}
+          />
         }
       />
 
