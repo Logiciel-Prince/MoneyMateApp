@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
@@ -37,6 +38,7 @@ const TransactionsScreen = () => {
     Transaction | undefined
   >(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -53,7 +55,19 @@ const TransactionsScreen = () => {
   }, [scanSmsAndAddTransactions]);
 
   const sections = useMemo(() => {
-    const sorted = [...transactions].sort(
+    let filtered = transactions;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = transactions.filter(t => {
+        const matchDesc = t.description?.toLowerCase().includes(query) ?? false;
+        const matchCat = t.category.toLowerCase().includes(query);
+        const matchAmount = t.amount.toString().includes(query);
+        return matchDesc || matchCat || matchAmount;
+      });
+    }
+
+    const sorted = [...filtered].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
@@ -96,7 +110,7 @@ const TransactionsScreen = () => {
     });
 
     return result;
-  }, [transactions]);
+  }, [transactions, searchQuery]);
 
   const handleAddTransaction = (transactionData: Omit<Transaction, 'id'>) => {
     if (editingTransaction) {
@@ -231,6 +245,27 @@ const TransactionsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+        <Icon
+          name="search"
+          size={20}
+          color={theme.textSecondary}
+          style={{ marginRight: 10 }}
+        />
+        <TextInput
+          style={[styles.searchInput, { color: theme.text }]}
+          placeholder="Search transactions..."
+          placeholderTextColor={theme.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Icon name="close-circle" size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <SectionList
         sections={sections}
         renderItem={renderTransaction}
@@ -246,10 +281,14 @@ const TransactionsScreen = () => {
               color={theme.textSecondary}
             />
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              No transactions yet
+              {searchQuery
+                ? 'No transactions match your search'
+                : 'No transactions yet'}
             </Text>
             <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-              Tap the + button to add your first transaction
+              {searchQuery
+                ? 'Try a different keyword'
+                : 'Tap the + button to add your first transaction'}
             </Text>
           </View>
         }
@@ -292,6 +331,19 @@ const TransactionsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    margin: 15,
+    marginBottom: 5,
+    borderRadius: 12,
+    height: 50,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
   },
   list: {
     padding: 15,
