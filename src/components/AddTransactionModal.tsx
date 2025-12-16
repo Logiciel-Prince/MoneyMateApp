@@ -412,6 +412,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       borderColor: theme.border,
                     },
                   ]}
+                  activeColor={theme.card}
+                  itemContainerStyle={{
+                    backgroundColor: theme.background,
+                  }}
                 />
                 {errors.category ? (
                   <Text style={[styles.errorText, { color: theme.danger }]}>
