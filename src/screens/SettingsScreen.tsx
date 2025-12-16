@@ -663,6 +663,8 @@ const SettingsScreen = ({ navigation }: any) => {
                     height: 45,
                     marginBottom: 0,
                     backgroundColor: theme.background,
+                    color: theme.text,
+                    borderColor: theme.border,
                   },
                 ]}
                 placeholder="Category Name"
