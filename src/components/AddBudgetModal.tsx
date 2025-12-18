@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -35,17 +35,33 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
-  const [category, setCategory] = useState(editBudget?.category || '');
-  const [amount, setAmount] = useState(editBudget?.amount.toString() || '');
-  const [period, setPeriod] = useState<'monthly' | 'yearly'>(
-    editBudget?.period || 'monthly',
-  );
+  const [category, setCategory] = useState('');
+  const [amount, setAmount] = useState('');
+  const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   // Error states
   const [errors, setErrors] = useState({
     category: '',
     amount: '',
   });
+
+  // Update form fields when editBudget changes or modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      if (editBudget) {
+        setCategory(editBudget.category);
+        setAmount(editBudget.amount.toString());
+        setPeriod(editBudget.period);
+      } else {
+        // Reset form for new budget
+        setCategory('');
+        setAmount('');
+        setPeriod('monthly');
+      }
+      // Clear errors when modal opens
+      setErrors({ category: '', amount: '' });
+    }
+  }, [editBudget, visible]);
 
   // Filter categories for Expense type
   const availableCategories = useMemo(() => {
@@ -108,14 +124,6 @@ const AddBudgetModal: React.FC<AddBudgetModalProps> = ({
       period,
     });
 
-    // Reset form
-    setCategory('');
-    setAmount('');
-    setPeriod('monthly');
-    setErrors({
-      category: '',
-      amount: '',
-    });
     onClose();
   };
 

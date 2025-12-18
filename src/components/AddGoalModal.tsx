@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -36,14 +36,10 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
-  const [name, setName] = useState(editGoal?.name || '');
-  const [targetAmount, setTargetAmount] = useState(
-    editGoal?.targetAmount.toString() || '',
-  );
-  const [currentAmount, setCurrentAmount] = useState(
-    editGoal?.currentAmount.toString() || '0',
-  );
-  const [deadline, setDeadline] = useState(editGoal?.deadline || '');
+  const [name, setName] = useState('');
+  const [targetAmount, setTargetAmount] = useState('');
+  const [currentAmount, setCurrentAmount] = useState('0');
+  const [deadline, setDeadline] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Error states
@@ -53,6 +49,31 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
     currentAmount: '',
     deadline: '',
   });
+
+  // Update form fields when editGoal changes or modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      if (editGoal) {
+        setName(editGoal.name);
+        setTargetAmount(editGoal.targetAmount.toString());
+        setCurrentAmount(editGoal.currentAmount.toString());
+        setDeadline(editGoal.deadline);
+      } else {
+        // Reset form for new goal
+        setName('');
+        setTargetAmount('');
+        setCurrentAmount('0');
+        setDeadline('');
+      }
+      // Clear errors when modal opens
+      setErrors({
+        name: '',
+        targetAmount: '',
+        currentAmount: '',
+        deadline: '',
+      });
+    }
+  }, [editGoal, visible]);
 
   const handleNumericInput = (
     text: string,
@@ -145,17 +166,6 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({
       category: 'Savings', // Default category
     });
 
-    // Reset form
-    setName('');
-    setTargetAmount('');
-    setCurrentAmount('0');
-    setDeadline('');
-    setErrors({
-      name: '',
-      targetAmount: '',
-      currentAmount: '',
-      deadline: '',
-    });
     onClose();
   };
 

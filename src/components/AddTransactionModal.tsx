@@ -198,18 +198,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       toAccountId: type === 'transfer' ? toAccountId : undefined,
     });
 
-    setType('expense');
-    setAmount('');
-    setCategory('');
-    setDescription('');
-    setAccountId(accounts[0]?.id || '');
-    setToAccountId('');
-    setErrors({
-      amount: '',
-      category: '',
-      accountId: '',
-      toAccountId: '',
-    });
     onClose();
   };
 
