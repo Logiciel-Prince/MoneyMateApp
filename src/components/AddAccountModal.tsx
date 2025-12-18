@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -41,19 +41,35 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
-  const [name, setName] = useState(editAccount?.name || '');
+  const [name, setName] = useState('');
   const [type, setType] = useState<'bank' | 'wallet' | 'credit' | 'cash'>(
-    editAccount?.type || 'bank',
+    'bank',
   );
-  const [balance, setBalance] = useState(
-    editAccount?.balance.toString() || '0',
-  );
+  const [balance, setBalance] = useState('0');
 
   // Error states
   const [errors, setErrors] = useState({
     name: '',
     balance: '',
   });
+
+  // Update form fields when editAccount changes or modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      if (editAccount) {
+        setName(editAccount.name);
+        setType(editAccount.type);
+        setBalance(editAccount.balance.toString());
+      } else {
+        // Reset form for new account
+        setName('');
+        setType('bank');
+        setBalance('0');
+      }
+      // Clear errors when modal opens
+      setErrors({ name: '', balance: '' });
+    }
+  }, [editAccount, visible]);
 
   const handleSave = () => {
     const newErrors = { name: '', balance: '' };
@@ -87,11 +103,6 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
       currency: settings.currency, // Use settings currency
     });
 
-    // Reset form
-    setName('');
-    setType('bank');
-    setBalance('0');
-    setErrors({ name: '', balance: '' });
     onClose();
   };
 
