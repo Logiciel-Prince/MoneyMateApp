@@ -18,6 +18,7 @@ import { useData } from '../context/DataContext';
 import { lightTheme, darkTheme } from '../theme';
 import { CategoryType, Category } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import tw from 'twrnc';
 
 const SettingsScreen = ({ navigation }: any) => {
   const systemColorScheme = useColorScheme();
@@ -170,21 +171,26 @@ const SettingsScreen = ({ navigation }: any) => {
   const renderCategoryItem = ({ item }: { item: Category }) => (
     <View style={[styles.categoryItem, { borderBottomColor: theme.border }]}>
       <View
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+        style={[
+          tw`flex-row`,
+          tw`Center`,
+          tw`gap-2.5`,
+          tw`flex-1`,
+        ]}
       >
         <View style={[styles.catIcon, { backgroundColor: item.color + '20' }]}>
           <Icon name={item.icon} size={18} color={item.color} />
         </View>
         <View>
-          <Text style={{ color: theme.text, fontWeight: '500' }}>
+          <Text style={[{ color: theme.text }, tw`font-medium`]}>
             {item.name}
           </Text>
           <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 10,
-              textTransform: 'capitalize',
-            }}
+            style={[
+              { color: theme.textSecondary },
+              tw`text-[10px]`,
+              tw`capitalize`,
+            ]}
           >
             {item.type}
           </Text>
@@ -194,7 +200,7 @@ const SettingsScreen = ({ navigation }: any) => {
       {!item.is_default && (
         <TouchableOpacity
           onPress={() => handleDeleteCategory(item.id, item.is_default)}
-          style={{ padding: 5 }}
+          style={tw`p-1.5`}
         >
           <Icon name="trash-outline" size={18} color="#ef4444" />
         </TouchableOpacity>
@@ -204,7 +210,7 @@ const SettingsScreen = ({ navigation }: any) => {
           name="lock-closed-outline"
           size={14}
           color={theme.textSecondary}
-          style={{ opacity: 0.5 }}
+          style={tw`opacity-50`}
         />
       )}
     </View>
@@ -213,7 +219,7 @@ const SettingsScreen = ({ navigation }: any) => {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={tw`pb-10`}
     >
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
@@ -313,7 +319,7 @@ const SettingsScreen = ({ navigation }: any) => {
           ]}
           onPress={() => setCurrencyModalVisible(true)}
         >
-          <Text style={{ color: theme.text, fontSize: 16 }}>
+          <Text style={[tw`text-base`, { color: theme.text }]}>
             {settings.currency} (
             {currencies.find(c => c.code === settings.currency)?.symbol || '$'})
           </Text>
@@ -329,18 +335,21 @@ const SettingsScreen = ({ navigation }: any) => {
         <View
           style={[
             styles.innerCard,
-            { backgroundColor: theme.background, opacity: 0.8 },
+            { backgroundColor: theme.background },
+            tw`opacity-80`,
           ]}
         >
           <View style={styles.categoryInfo}>
             <View style={[styles.iconBox, { backgroundColor: '#8b5cf6' }]}>
               <Icon name="pricetag" size={24} color="#FFF" />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={tw`flex-1`}>
               <Text style={[styles.innerTitle, { color: theme.text }]}>
                 Manage Categories
               </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+              <Text
+                style={[{ color: theme.textSecondary }, tw`text-xs`]}
+              >
                 Edit existing categories or add new ones.
               </Text>
             </View>
@@ -349,7 +358,11 @@ const SettingsScreen = ({ navigation }: any) => {
             style={[styles.smallBtn, { borderColor: theme.border }]}
             onPress={() => setCategoriesModalVisible(true)}
           >
-            <Text style={{ color: theme.text, fontWeight: '600' }}>Manage</Text>
+            <Text
+              style={[{ color: theme.text }, tw`font-semibold`]}
+            >
+              Manage
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -362,7 +375,7 @@ const SettingsScreen = ({ navigation }: any) => {
 
         {/* Load Demo */}
         <View style={styles.dataRow}>
-          <View style={{ flex: 1 }}>
+          <View style={tw`flex-1`}>
             <Text style={[styles.rowTitle, { color: theme.text }]}>
               Load Demo Data
             </Text>
@@ -384,9 +397,9 @@ const SettingsScreen = ({ navigation }: any) => {
             name="cloud-upload-outline"
             size={24}
             color={theme.textSecondary}
-            style={{ marginRight: 10 }}
+            style={tw`mr-2.5`}
           />
-          <View style={{ flex: 1 }}>
+          <View style={tw`flex-1`}>
             <Text style={[styles.rowTitle, { color: theme.text }]}>
               Import Data
             </Text>
@@ -408,9 +421,9 @@ const SettingsScreen = ({ navigation }: any) => {
             name="cloud-download-outline"
             size={24}
             color={theme.textSecondary}
-            style={{ marginRight: 10 }}
+            style={tw`mr-2.5`}
           />
-          <View style={{ flex: 1 }}>
+          <View style={tw`flex-1`}>
             <Text style={[styles.rowTitle, { color: theme.text }]}>
               Export Data
             </Text>
@@ -443,9 +456,9 @@ const SettingsScreen = ({ navigation }: any) => {
             name="trash-outline"
             size={24}
             color="#ef4444"
-            style={{ marginRight: 10 }}
+            style={tw`mr-2.5`}
           />
-          <View style={{ flex: 1 }}>
+          <View style={tw`flex-1`}>
             <Text style={[styles.rowTitle, { color: '#ef4444' }]}>
               Clear All Data
             </Text>
@@ -463,7 +476,7 @@ const SettingsScreen = ({ navigation }: any) => {
       </View>
 
       <View style={styles.footer}>
-        <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+        <Text style={[{ color: theme.textSecondary }, tw`text-xs`]}>
           MoneyMate v1.0.0 • Local Storage Persistence
         </Text>
       </View>
@@ -480,7 +493,9 @@ const SettingsScreen = ({ navigation }: any) => {
             <Text style={[styles.modalTitle, { color: theme.text }]}>
               Import Data
             </Text>
-            <Text style={{ color: theme.textSecondary, marginBottom: 10 }}>
+            <Text
+              style={[{ color: theme.textSecondary }, tw`mb-2.5`]}
+            >
               Paste your backup JSON content below:
             </Text>
             <TextInput
@@ -519,7 +534,7 @@ const SettingsScreen = ({ navigation }: any) => {
                 {isImporting ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={{ color: '#FFF' }}>Import</Text>
+                  <Text style={tw`text-white`}>Import</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -560,7 +575,9 @@ const SettingsScreen = ({ navigation }: any) => {
                   setCurrencyModalVisible(false);
                 }}
               >
-                <Text style={{ color: theme.text, fontSize: 16 }}>
+                <Text
+                  style={[{ color: theme.text }, tw`text-base`]}
+                >
                   {c.symbol} - {c.name} ({c.code})
                 </Text>
                 {settings.currency === c.code && (
@@ -610,11 +627,21 @@ const SettingsScreen = ({ navigation }: any) => {
             ]}
           >
             <Text
-              style={{ color: theme.text, fontWeight: '600', marginBottom: 10 }}
+              style={[
+                { color: theme.text },
+                tw`font-semibold`,
+                tw`mb-2.5`,
+              ]}
             >
               Add New Category
             </Text>
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+            <View
+              style={[
+                tw`flex-row`,
+                tw`gap-2.5`,
+                tw`mb-2.5`,
+              ]}
+            >
               <TouchableOpacity
                 style={[
                   styles.typeBtn,
@@ -654,7 +681,7 @@ const SettingsScreen = ({ navigation }: any) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={[tw`flex-row`, tw`gap-2.5`]}>
               <TextInput
                 style={[
                   styles.input,
