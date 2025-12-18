@@ -9,12 +9,36 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useData} from '../context/DataContext';
-import {lightTheme, darkTheme} from '../theme';
+import { useData } from '../context/DataContext';
+import { lightTheme, darkTheme } from '../theme';
 import { Account, Transaction } from '../types';
 import AddAccountModal from '../components/AddAccountModal';
 import AddTransactionModal from '../components/AddTransactionModal';
 import { formatCurrency } from '../utils/currency';
+import { Tooltip } from '../components/Tooltip';
+
+// Format currency in compact form for amounts above 10 lakhs
+const formatCompactCurrency = (amount: number, currency: string) => {
+  const absAmount = Math.abs(amount);
+
+  // For amounts above 10 lakh (1,000,000), show first 7 chars with ...
+  if (absAmount >= 1000000) {
+    const sign = amount < 0 ? '-' : '';
+    const currencySymbol =
+      currency === 'INR' ? '₹' : currency === 'USD' ? '$' : currency;
+    const amountStr = Math.floor(absAmount).toString();
+
+    // Show first 7 characters (including currency symbol) + ...
+    const displayStr = `${sign}${currencySymbol}${amountStr}`;
+    if (displayStr.length > 7) {
+      return displayStr.substring(0, 7) + '...';
+    }
+    return displayStr;
+  }
+
+  // For amounts below 10 lakh, show normal full format
+  return formatCurrency(amount, currency);
+};
 
 const AccountsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -109,52 +133,90 @@ const AccountsScreen = () => {
     <TouchableOpacity
       style={[styles.accountCard, { backgroundColor: theme.card }]}
       onLongPress={() => handleEdit(item)}
+      activeOpacity={0.6}
     >
-      <View style={styles.accountLeft}>
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: theme.primary + '20' },
-          ]}
-        >
-          <Icon
-            name={getAccountIcon(item.type)}
-            size={24}
-            color={theme.primary}
-          />
+      <View style={styles.cardContent}>
+        {/* Left: Icon + Info */}
+        <View style={styles.leftSection}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: theme.primary + '20' },
+            ]}
+          >
+            <Icon
+              name={getAccountIcon(item.type)}
+              size={24}
+              color={theme.primary}
+            />
+          </View>
+
+          <Tooltip content={item.name}>
+            <TouchableOpacity style={styles.accountInfo} activeOpacity={0.7}>
+              <Text
+                style={[styles.accountName, { color: theme.text }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {item.name}
+              </Text>
+              <Text
+                style={[styles.accountType, { color: theme.textSecondary }]}
+              >
+                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          </Tooltip>
         </View>
-        <View>
-          <Text style={[styles.accountName, { color: theme.text }]}>
-            {item.name}
-          </Text>
-          <Text style={[styles.accountType, { color: theme.textSecondary }]}>
-            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-          </Text>
-        </View>
+
+        {/* Right: Balance */}
+        <Tooltip content={formatCurrency(item.balance, settings.currency)}>
+          <TouchableOpacity style={styles.rightSection} activeOpacity={0.7}>
+            <Text
+              style={[
+                styles.balance,
+                { color: item.balance >= 0 ? theme.income : theme.expense },
+              ]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {formatCompactCurrency(item.balance, settings.currency)}
+            </Text>
+          </TouchableOpacity>
+        </Tooltip>
       </View>
-      <View style={styles.accountRight}>
-        <Text
-          style={[
-            styles.balance,
-            { color: item.balance >= 0 ? theme.income : theme.expense },
-          ]}
+
+      {/* Bottom Action Bar */}
+      <View style={[styles.actionBar, { borderTopColor: theme.border }]}>
+        <TouchableOpacity
+          onPress={e => {
+            e.stopPropagation();
+            handleAddBalance(item);
+          }}
+          style={styles.actionItem}
         >
-          {formatCurrency(item.balance, settings.currency)}
-        </Text>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            onPress={() => handleAddBalance(item)}
-            style={styles.actionButton}
-          >
-            <Icon name="add-circle-outline" size={24} color={theme.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDelete(item.id)}
-            style={styles.actionButton}
-          >
-            <Icon name="trash-outline" size={20} color={theme.danger} />
-          </TouchableOpacity>
-        </View>
+          <Icon name="add-outline" size={18} color={theme.income} />
+          <Text style={[styles.actionLabel, { color: theme.income }]}>
+            Add Money
+          </Text>
+        </TouchableOpacity>
+
+        <View
+          style={[styles.actionDivider, { backgroundColor: theme.border }]}
+        />
+
+        <TouchableOpacity
+          onPress={e => {
+            e.stopPropagation();
+            handleDelete(item.id);
+          }}
+          style={styles.actionItem}
+        >
+          <Icon name="trash-outline" size={18} color={theme.danger} />
+          <Text style={[styles.actionLabel, { color: theme.danger }]}>
+            Delete
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -261,23 +323,27 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   accountCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: 'hidden',
   },
-  accountLeft: {
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     gap: 12,
+    minWidth: 0,
   },
   iconContainer: {
     width: 48,
@@ -285,33 +351,71 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
+  },
+  accountInfo: {
+    flex: 1,
+    minWidth: 0,
   },
   accountName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 4,
   },
   accountType: {
-    fontSize: 14,
+    fontSize: 13,
+    opacity: 0.7,
   },
-  accountRight: {
-    alignItems: 'flex-end',
-    gap: 8,
+  rightSection: {
+    paddingLeft: 12,
+    maxWidth: '40%',
   },
   balance: {
     fontSize: 20,
     fontWeight: 'bold',
+    textAlign: 'right',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  actionItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  actionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  actionDivider: {
+    width: 1,
+    marginHorizontal: 8,
   },
   deleteButton: {
     padding: 4,
   },
   actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    gap: 8,
   },
   actionButton: {
-    padding: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
