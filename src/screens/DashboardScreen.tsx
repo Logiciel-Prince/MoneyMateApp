@@ -12,28 +12,22 @@ import {
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
-import { lightTheme, darkTheme } from '../theme';
+import { lightTheme, darkTheme, Theme } from '../theme';
 import AddTransactionModal from '../components/AddTransactionModal';
 import { Transaction, Goal } from '../types';
 import AddGoalContributionModal from '../components/AddGoalContributionModal';
-import {
-  formatCurrency,
-  getCurrencySymbol,
-  formatCurrencyCompact,
-} from '../utils/currency';
+import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
 const screenWidth = Dimensions.get('window').width;
 
 import tw from 'twrnc';
-
-// ... existing imports
 
 interface StatCardProps {
   label: string;
   value: string | number; // Allow formatted string
   icon: string;
   color: string; // Can be a tailwind class like 'text-green-600' or hex
-  theme: any;
+  theme: Theme;
   trend?: string; // Text like "4.2% vs last month"
   trendDirection?: 'up' | 'down';
   isPositive?: boolean;
@@ -166,20 +160,12 @@ const DashboardScreen = ({ navigation }: any) => {
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
-  // inject mode for inline conditionals
-  theme.mode = activeThemeType || 'light';
-
-  // ... existing calculations
-
-  // Refactor StatCard calls in render:
-  // ...
 
   const [pieMonthOffset, setPieMonthOffset] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
-  // --- Calculations ---
   // --- Calculations ---
   // Helper for safe date parsing
   const parseDate = (dateStr: string) => {
@@ -271,7 +257,7 @@ const DashboardScreen = ({ navigation }: any) => {
 
       data.push({
         value: inc,
-        frontColor: (theme as any).mode === 'dark' ? '#4ade80' : '#16a34a',
+        frontColor: theme.mode === 'dark' ? '#4ade80' : '#16a34a',
         spacing: 6,
         labelComponent: () => (
           <View style={{ width: 50, marginLeft: 6 }}>
@@ -290,18 +276,17 @@ const DashboardScreen = ({ navigation }: any) => {
       });
       data.push({
         value: exp,
-        frontColor: (theme as any).mode === 'dark' ? '#f87171' : '#dc2626',
+        frontColor: theme.mode === 'dark' ? '#f87171' : '#dc2626',
         spacing: 32, // larger spacing after the group
       });
     }
 
-    const sectionCount = 5;
     const rawMax = Math.max(...data.map((d: any) => d.value || 0), 100);
     const maxValue = rawMax;
     const step = rawMax / sectionCount;
 
     return { barChartData: data, chartMaxValue: maxValue, stepValue: step };
-  }, [transactions, theme.mode, getMonthlyTotal]);
+  }, [transactions, theme, getMonthlyTotal]);
 
   // Pie Chart Data
   const pieDisplayDate = new Date();
@@ -360,7 +345,7 @@ const DashboardScreen = ({ navigation }: any) => {
       .sort((a, b) => b.value - a.value);
 
     return entries;
-  }, [transactions, pieMonthOffset, theme.textSecondary]);
+  }, [transactions, pieMonthOffset]);
 
   const totalExpenseForPie = pieChartData.reduce(
     (acc, curr) => acc + curr.value,

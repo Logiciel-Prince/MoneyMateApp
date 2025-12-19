@@ -10,6 +10,7 @@ export const lightTheme = {
   border: '#E2E8F0', // slate-200
   income: '#16A34A',
   expense: '#DC2626',
+  mode: 'light' as const,
 };
 
 export const darkTheme = {
@@ -24,6 +25,20 @@ export const darkTheme = {
   border: '#334155', // slate-700
   income: '#22C55E',
   expense: '#EF4444',
+  mode: 'dark' as const,
 };
 
-export type Theme = typeof lightTheme;
+export type Theme = {
+  background: string;
+  card: string;
+  text: string;
+  textSecondary: string;
+  primary: string;
+  success: string;
+  warning: string;
+  danger: string;
+  border: string;
+  income: string;
+  expense: string;
+  mode: 'light' | 'dark';
+};
