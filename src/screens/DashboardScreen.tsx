@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   useColorScheme,
   Dimensions,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
@@ -61,14 +61,9 @@ const StatCard = ({
   return (
     <View
       style={[
-        tw`p-4 rounded-2xl mb-4`,
+        tw`p-4 rounded-2xl mb-4 shadow-md`,
         {
           backgroundColor: theme.card,
-          elevation: 2,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
         },
       ]}
     >
@@ -142,6 +137,68 @@ const StatCard = ({
     </View>
   );
 };
+
+// Chart Label Component (defined outside to avoid re-creation on each render)
+interface ChartLabelProps {
+  label: string;
+  theme: Theme;
+}
+
+const ChartLabel: React.FC<ChartLabelProps> = ({ label, theme }) => (
+  <View style={tw`w-12 ml-1.5`}>
+    <Text
+      style={[tw`text-xs text-center`, { color: theme.textSecondary }]}
+      numberOfLines={1}
+    >
+      {label}
+    </Text>
+  </View>
+);
+
+// Centered Chart Label Component (for grouped bars)
+interface CenteredChartLabelProps {
+  label: string;
+  theme: Theme;
+  width: number;
+}
+
+const CenteredChartLabel: React.FC<CenteredChartLabelProps> = ({
+  label,
+  theme,
+  width,
+}) => (
+  <View style={[tw`items-center justify-center mt-1`, { width }]}>
+    <Text
+      style={[tw`text-xs text-center`, { color: theme.textSecondary }]}
+      numberOfLines={1}
+    >
+      {label}
+    </Text>
+  </View>
+);
+
+// Wrapper components that accept props and can be used as stable references
+interface ChartLabelWrapperProps {
+  label: string;
+  theme: Theme;
+}
+
+const ChartLabelWrapper: React.FC<ChartLabelWrapperProps> = React.memo(
+  ({ label, theme }) => <ChartLabel label={label} theme={theme} />,
+);
+ChartLabelWrapper.displayName = 'ChartLabelWrapper';
+
+interface CenteredChartLabelWrapperProps {
+  label: string;
+  theme: Theme;
+  width: number;
+}
+
+const CenteredChartLabelWrapper: React.FC<CenteredChartLabelWrapperProps> =
+  React.memo(({ label, theme, width }) => (
+    <CenteredChartLabel label={label} theme={theme} width={width} />
+  ));
+CenteredChartLabelWrapper.displayName = 'CenteredChartLabelWrapper';
 
 const DashboardScreen = ({ navigation }: any) => {
   // ... existing hooks
@@ -258,20 +315,9 @@ const DashboardScreen = ({ navigation }: any) => {
         value: inc,
         frontColor: theme.mode === 'dark' ? '#4ade80' : '#16a34a',
         spacing: 6,
-        labelComponent: () => (
-          <View style={{ width: 50, marginLeft: 6 }}>
-            <Text
-              style={{
-                color: theme.textSecondary,
-                fontSize: 10,
-                textAlign: 'center',
-              }}
-              numberOfLines={1}
-            >
-              {label}
-            </Text>
-          </View>
-        ),
+        label: label, // Store label for later access
+        // eslint-disable-next-line react/no-unstable-nested-components
+        labelComponent: () => <ChartLabelWrapper label={label} theme={theme} />,
       });
       data.push({
         value: exp,
@@ -329,6 +375,7 @@ const DashboardScreen = ({ navigation }: any) => {
     const getCategoryColor = (cat: string) => {
       let hash = 0;
       for (let i = 0; i < cat.length; i++) {
+        // eslint-disable-next-line no-bitwise
         hash = cat.charCodeAt(i) + ((hash << 5) - hash);
       }
       return palette[Math.abs(hash) % palette.length];
@@ -394,7 +441,7 @@ const DashboardScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: theme.background }]}>
       <ScrollView
         style={[tw`flex-1`, { backgroundColor: theme.background }]}
         contentContainerStyle={tw`pb-25`}
@@ -508,20 +555,13 @@ const DashboardScreen = ({ navigation }: any) => {
             {/* Bar Chart */}
             <View
               style={[
-                tw`mx-5 mb-5 p-5 rounded-2xl`,
+                tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
                 {
                   backgroundColor: theme.card,
-                  overflow: 'visible',
-                  zIndex: 10,
-                  elevation: 2,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
                 },
               ]}
             >
-              <View style={tw`flex-row justify-between items-center mb-5 z-20`}>
+              <View style={tw`flex-row justify-between items-center mb-5`}>
                 <Text style={[tw`text-lg font-bold`, { color: theme.text }]}>
                   Income & Expense History
                 </Text>
@@ -626,30 +666,13 @@ const DashboardScreen = ({ navigation }: any) => {
                     };
 
                     // Update label component to center under the GROUP
-                    if (isIncomeBar) {
+                    if (isIncomeBar && item.label) {
                       newItem.labelComponent = () => (
-                        <View
-                          style={{
-                            width: groupWidth,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: theme.textSecondary,
-                              fontSize: 10,
-                              textAlign: 'center',
-                              marginTop: 4,
-                            }}
-                            numberOfLines={1}
-                          >
-                            {
-                              item.labelComponent().props.children.props
-                                .children
-                            }
-                          </Text>
-                        </View>
+                        <CenteredChartLabelWrapper
+                          label={item.label}
+                          theme={theme}
+                          width={groupWidth}
+                        />
                       );
                     }
                     return newItem;
@@ -669,10 +692,10 @@ const DashboardScreen = ({ navigation }: any) => {
                       rulesLength={screenWidth - 100}
                       xAxisThickness={0}
                       yAxisThickness={0}
-                      yAxisTextStyle={{
-                        color: theme.textSecondary,
-                        fontSize: 10,
-                      }}
+                      yAxisTextStyle={[
+                        tw`text-[10px]`,
+                        { color: theme.textSecondary },
+                      ]}
                       noOfSections={sectionCount}
                       maxValue={chartMaxValue}
                       stepValue={stepValue > 0 ? stepValue : 10}
@@ -727,34 +750,22 @@ const DashboardScreen = ({ navigation }: any) => {
 
                         return (
                           <View
-                            style={{
-                              marginLeft: marginLeft,
-                              marginBottom:
-                                item.value > chartMaxValue * 0.7 ? 0 : 6,
-                              marginTop:
-                                item.value > chartMaxValue * 0.7 ? 20 : 0,
-                              width: tooltipWidth,
-                              backgroundColor: theme.text, // Inverted background
-                              paddingVertical: 2,
-                              borderRadius: 16,
-                              elevation: 4,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              shadowColor: '#000',
-                              shadowOffset: { width: 0, height: 2 },
-                              shadowOpacity: 0.15,
-                              shadowRadius: 2,
-                              zIndex: 2000,
-                              position: 'absolute',
-                            }}
+                            style={[
+                              tw`absolute items-center justify-center rounded-2xl py-0.5`,
+                              {
+                                marginLeft: marginLeft,
+                                width: tooltipWidth,
+                                backgroundColor: theme.text,
+                              },
+                            ]}
                           >
                             <Text
-                              style={{
-                                color: theme.card, // Inverted text
-                                fontSize: 10,
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                              }}
+                              style={[
+                                tw`text-xs font-bold`,
+                                {
+                                  color: theme.card,
+                                },
+                              ]}
                               numberOfLines={1}
                               adjustsFontSizeToFit
                             >
@@ -775,41 +786,26 @@ const DashboardScreen = ({ navigation }: any) => {
                 </View>
               )}
               {/* Legend for Bar Chart */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  marginTop: 15,
-                  gap: 20,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor:
-                        (theme as any).mode === 'dark' ? '#4ade80' : '#16a34a',
-                      marginRight: 8,
-                    }}
-                  />
-                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+              <View style={tw`flex-row justify-center mt-4 gap-5`}>
+                <View style={tw`flex-row items-center`}>
+                  <View style={tw`w-2 h-2 rounded-full mr-2 bg-green-500`} />
+                  <Text
+                    style={[
+                      tw`text-xs font-bold`,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
                     Income
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor:
-                        (theme as any).mode === 'dark' ? '#f87171' : '#dc2626',
-                      marginRight: 8,
-                    }}
-                  />
-                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                <View style={tw`flex-row items-center`}>
+                  <View style={tw`w-2 h-2 rounded-full mr-2 bg-red-400`} />
+                  <Text
+                    style={[
+                      tw`text-xs font-bold`,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
                     Expense
                   </Text>
                 </View>
@@ -819,29 +815,18 @@ const DashboardScreen = ({ navigation }: any) => {
             {/* Expense Breakdown (Donut) */}
             <View
               style={[
-                tw`mx-5 mb-5 p-5 rounded-2xl`,
+                tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
                 {
                   backgroundColor: theme.card,
-                  elevation: 2,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
                 },
               ]}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 20,
-                }}
-              >
+              <View style={tw`flex-row items-center mb-2.5`}>
                 <Icon
                   name="pie-chart-outline"
                   size={20}
                   color={theme.text}
-                  style={{ marginRight: 10 }}
+                  style={tw`mr-3`}
                 />
                 <Text style={[tw`text-lg font-bold`, { color: theme.text }]}>
                   Expense Breakdown
@@ -888,13 +873,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
               </View>
 
-              <View
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginTop: 10,
-                }}
-              >
+              <View style={tw`flex-1 items-center justify-center mt-2.5`}>
                 {pieChartData.length > 0 ? (
                   <>
                     <PieChart
@@ -908,26 +887,21 @@ const DashboardScreen = ({ navigation }: any) => {
                       centerLabelComponent={() => {
                         return (
                           <View
-                            style={{
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                            }}
+                            style={tw`flex-1 items-center justify-center mt-2.5`}
                           >
                             <Text
-                              style={{
-                                color: theme.textSecondary,
-                                fontSize: 12,
-                                marginBottom: 4,
-                              }}
+                              style={[
+                                tw`text-xs`,
+                                { color: theme.textSecondary },
+                              ]}
                             >
                               TOTAL
                             </Text>
                             <Text
-                              style={{
-                                color: theme.text,
-                                fontSize: 22,
-                                fontWeight: 'bold',
-                              }}
+                              style={[
+                                tw`text-[22px] font-bold`,
+                                { color: theme.text },
+                              ]}
                             >
                               {formatCurrency(
                                 totalExpenseForPie,
@@ -945,10 +919,7 @@ const DashboardScreen = ({ navigation }: any) => {
                     {/* Custom Legend List */}
                     <View style={tw`mt-5 w-full`}>
                       {/* Fixed height scrollable container for list */}
-                      <ScrollView
-                        style={{ maxHeight: 250 }}
-                        nestedScrollEnabled
-                      >
+                      <ScrollView style={tw`max-h-[250px]`} nestedScrollEnabled>
                         {pieChartData.map((item, index) => (
                           <View
                             key={index}
@@ -1024,14 +995,9 @@ const DashboardScreen = ({ navigation }: any) => {
             {/* Top Savings Goals */}
             <View
               style={[
-                tw`mx-5 mb-5 p-5 rounded-2xl`,
+                tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
                 {
                   backgroundColor: theme.card,
-                  elevation: 2,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
                 },
               ]}
             >
@@ -1184,14 +1150,10 @@ const DashboardScreen = ({ navigation }: any) => {
       {accounts.length > 0 && (
         <TouchableOpacity
           style={[
-            tw`absolute right-5 bottom-7 w-15 h-15 rounded-full justify-center items-center`,
+            tw`absolute right-5 bottom-7 w-15 h-15 rounded-full justify-center items-center shadow-lg`,
             {
               backgroundColor: theme.primary,
               shadowColor: theme.primary,
-              elevation: 5,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 5,
             },
           ]}
           onPress={() => setModalVisible(true)}
