@@ -2,7 +2,6 @@ import React, {useState, useMemo} from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   useColorScheme,
   Dimensions,
@@ -397,18 +396,16 @@ const DashboardScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
-        style={[styles.container, { backgroundColor: theme.background }]}
-        contentContainerStyle={styles.contentContainer}
+        style={[tw`flex-1`, { backgroundColor: theme.background }]}
+        contentContainerStyle={tw`pb-25`}
       >
         {/* Dashboard Title Header */}
-        <View style={styles.header}>
+        <View style={tw`px-5 pt-2.5 pb-5`}>
           <View>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>
+            <Text style={[tw`text-3xl font-bold`, { color: theme.text }]}>
               Dashboard
             </Text>
-            <Text
-              style={[styles.headerSubtitle, { color: theme.textSecondary }]}
-            >
+            <Text style={[tw`text-sm mt-1`, { color: theme.textSecondary }]}>
               Welcome back, here's your financial overview.
             </Text>
           </View>
@@ -416,21 +413,32 @@ const DashboardScreen = ({ navigation }: any) => {
 
         {accounts.length === 0 ? (
           <View
-            style={[styles.emptyStateContainer, { borderColor: theme.border }]}
+            style={[
+              tw`m-5 p-7.5 border-2 border-dashed rounded-2xl items-center justify-center`,
+              { borderColor: theme.border },
+            ]}
           >
             <View
               style={[
-                styles.iconCircle,
+                tw`w-20 h-20 rounded-full justify-center items-center mb-5`,
                 { backgroundColor: `${theme.primary}20` },
               ]}
             >
               <Icon name="grid-outline" size={40} color={theme.primary} />
             </View>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
+            <Text
+              style={[
+                tw`text-2xl font-bold mb-2.5 text-center`,
+                { color: theme.text },
+              ]}
+            >
               Welcome to MoneyMate
             </Text>
             <Text
-              style={[styles.emptySubtitle, { color: theme.textSecondary }]}
+              style={[
+                tw`text-base text-center leading-6 mb-7.5 px-2.5`,
+                { color: theme.textSecondary },
+              ]}
             >
               Your personal finance dashboard is currently empty. Get started by
               adding your accounts, or load demo data to explore the features.
@@ -438,27 +446,25 @@ const DashboardScreen = ({ navigation }: any) => {
 
             <TouchableOpacity
               style={[
-                styles.emptyButtonPrimary,
+                tw`flex-row items-center justify-center py-3 px-6 rounded-xl mb-4 w-full gap-2`,
                 { backgroundColor: theme.primary },
               ]}
               onPress={() => navigation.navigate('Accounts')}
             >
               <Icon name="add" size={20} color="#FFF" />
-              <Text style={styles.emptyButtonTextPrimary}>
+              <Text style={tw`text-white text-base font-semibold`}>
                 Add Your First Account
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.emptyButtonSecondary,
+                tw`items-center justify-center py-3 px-6 rounded-xl border w-full`,
                 { borderColor: theme.border, backgroundColor: theme.card },
               ]}
               onPress={() => navigation.navigate('Settings')}
             >
-              <Text
-                style={[styles.emptyButtonTextSecondary, { color: theme.text }]}
-              >
+              <Text style={[tw`text-base font-medium`, { color: theme.text }]}>
                 Go to Settings for Demo Data
               </Text>
             </TouchableOpacity>
@@ -466,7 +472,7 @@ const DashboardScreen = ({ navigation }: any) => {
         ) : (
           <>
             {/* Vertical Stat Cards */}
-            <View style={styles.statsContainer}>
+            <View style={tw`px-5 gap-4 mb-5`}>
               <StatCard
                 label="Total Balance"
                 value={totalBalance}
@@ -502,29 +508,21 @@ const DashboardScreen = ({ navigation }: any) => {
             {/* Bar Chart */}
             <View
               style={[
-                styles.card,
+                tw`mx-5 mb-5 p-5 rounded-2xl`,
                 {
                   backgroundColor: theme.card,
                   overflow: 'visible',
                   zIndex: 10,
+                  elevation: 2,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
                 },
               ]}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 20,
-                  zIndex: 20,
-                }}
-              >
-                <Text
-                  style={[
-                    styles.cardTitle,
-                    { color: theme.text, marginBottom: 0 },
-                  ]}
-                >
+              <View style={tw`flex-row justify-between items-center mb-5 z-20`}>
+                <Text style={[tw`text-lg font-bold`, { color: theme.text }]}>
                   Income & Expense History
                 </Text>
               </View>
@@ -770,7 +768,7 @@ const DashboardScreen = ({ navigation }: any) => {
                   );
                 })()
               ) : (
-                <View style={[styles.noDataContainer, { height: 200 }]}>
+                <View style={tw`h-50 justify-center items-center`}>
                   <Text style={{ color: theme.textSecondary }}>
                     No data available
                   </Text>
@@ -819,7 +817,19 @@ const DashboardScreen = ({ navigation }: any) => {
             </View>
 
             {/* Expense Breakdown (Donut) */}
-            <View style={[styles.card, { backgroundColor: theme.card }]}>
+            <View
+              style={[
+                tw`mx-5 mb-5 p-5 rounded-2xl`,
+                {
+                  backgroundColor: theme.card,
+                  elevation: 2,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                },
+              ]}
+            >
               <View
                 style={{
                   flexDirection: 'row',
@@ -833,12 +843,7 @@ const DashboardScreen = ({ navigation }: any) => {
                   color={theme.text}
                   style={{ marginRight: 10 }}
                 />
-                <Text
-                  style={[
-                    styles.cardTitle,
-                    { color: theme.text, marginBottom: 0 },
-                  ]}
-                >
+                <Text style={[tw`text-lg font-bold`, { color: theme.text }]}>
                   Expense Breakdown
                 </Text>
               </View>
@@ -846,7 +851,7 @@ const DashboardScreen = ({ navigation }: any) => {
               {/* Month Selector */}
               <View
                 style={[
-                  styles.monthSelector,
+                  tw`flex-row items-center justify-between w-full p-2 rounded-xl mb-2.5`,
                   {
                     backgroundColor:
                       theme.mode === 'dark' ? '#1f2937' : '#f3f4f6',
@@ -855,7 +860,7 @@ const DashboardScreen = ({ navigation }: any) => {
               >
                 <TouchableOpacity
                   onPress={() => setPieMonthOffset(p => p - 1)}
-                  style={styles.arrowButton}
+                  style={tw`p-1.5`}
                 >
                   <Icon
                     name="chevron-back"
@@ -863,7 +868,9 @@ const DashboardScreen = ({ navigation }: any) => {
                     color={theme.textSecondary}
                   />
                 </TouchableOpacity>
-                <Text style={[styles.monthText, { color: theme.text }]}>
+                <Text
+                  style={[tw`text-base font-semibold`, { color: theme.text }]}
+                >
                   {pieDisplayDate.toLocaleString('default', {
                     month: 'long',
                     year: 'numeric',
@@ -871,7 +878,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 </Text>
                 <TouchableOpacity
                   onPress={() => setPieMonthOffset(p => p + 1)}
-                  style={styles.arrowButton}
+                  style={tw`p-1.5`}
                 >
                   <Icon
                     name="chevron-forward"
@@ -936,25 +943,28 @@ const DashboardScreen = ({ navigation }: any) => {
                     />
 
                     {/* Custom Legend List */}
-                    <View style={styles.legendContainer}>
+                    <View style={tw`mt-5 w-full`}>
                       {/* Fixed height scrollable container for list */}
                       <ScrollView
                         style={{ maxHeight: 250 }}
                         nestedScrollEnabled
                       >
                         {pieChartData.map((item, index) => (
-                          <View key={index} style={styles.legendItem}>
-                            <View style={styles.legendLeft}>
+                          <View
+                            key={index}
+                            style={tw`flex-row justify-between items-center mb-3`}
+                          >
+                            <View style={tw`flex-row items-center gap-2.5`}>
                               <View
                                 style={[
-                                  styles.legendDot,
+                                  tw`w-2.5 h-2.5 rounded-full`,
                                   { backgroundColor: item.color },
                                 ]}
                               />
                               <Text
                                 numberOfLines={1}
                                 style={[
-                                  styles.legendName,
+                                  tw`text-sm font-medium`,
                                   { color: theme.textSecondary },
                                 ]}
                               >
@@ -962,16 +972,10 @@ const DashboardScreen = ({ navigation }: any) => {
                               </Text>
                             </View>
 
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 12,
-                              }}
-                            >
+                            <View style={tw`flex-row items-center gap-3`}>
                               <View
                                 style={[
-                                  styles.percentBadge,
+                                  tw`px-2 py-1 rounded-md min-w-12 items-center`,
                                   {
                                     backgroundColor:
                                       theme.mode === 'dark'
@@ -981,11 +985,10 @@ const DashboardScreen = ({ navigation }: any) => {
                                 ]}
                               >
                                 <Text
-                                  style={{
-                                    color: theme.textSecondary,
-                                    fontSize: 11,
-                                    fontWeight: '600',
-                                  }}
+                                  style={[
+                                    tw`text-xs font-semibold`,
+                                    { color: theme.textSecondary },
+                                  ]}
                                 >
                                   {(
                                     (item.value / totalExpenseForPie) *
@@ -996,7 +999,7 @@ const DashboardScreen = ({ navigation }: any) => {
                               </View>
                               <Text
                                 style={[
-                                  styles.legendAmount,
+                                  tw`text-sm font-semibold w-20 text-right`,
                                   { color: theme.text },
                                 ]}
                               >
@@ -1009,7 +1012,7 @@ const DashboardScreen = ({ navigation }: any) => {
                     </View>
                   </>
                 ) : (
-                  <View style={styles.noDataContainer}>
+                  <View style={tw`h-50 justify-center items-center`}>
                     <Text style={{ color: theme.textSecondary }}>
                       No expenses for this month
                     </Text>
@@ -1019,8 +1022,20 @@ const DashboardScreen = ({ navigation }: any) => {
             </View>
 
             {/* Top Savings Goals */}
-            <View style={[styles.card, { backgroundColor: theme.card }]}>
-              <Text style={[styles.cardTitle, { color: theme.text }]}>
+            <View
+              style={[
+                tw`mx-5 mb-5 p-5 rounded-2xl`,
+                {
+                  backgroundColor: theme.card,
+                  elevation: 2,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                },
+              ]}
+            >
+              <Text style={[tw`text-lg font-bold mb-5`, { color: theme.text }]}>
                 Top Savings Goals
               </Text>
               {goals.slice(0, 3).map(goal => {
@@ -1156,7 +1171,9 @@ const DashboardScreen = ({ navigation }: any) => {
                 );
               })}
               {goals.length === 0 && (
-                <Text style={styles.noGoalsText}>No savings goals yet.</Text>
+                <Text style={[tw`text-center p-2.5`, { color: '#888' }]}>
+                  No savings goals yet.
+                </Text>
               )}
             </View>
           </>
@@ -1167,8 +1184,15 @@ const DashboardScreen = ({ navigation }: any) => {
       {accounts.length > 0 && (
         <TouchableOpacity
           style={[
-            styles.fab,
-            { backgroundColor: theme.primary, shadowColor: theme.primary },
+            tw`absolute right-5 bottom-7 w-15 h-15 rounded-full justify-center items-center`,
+            {
+              backgroundColor: theme.primary,
+              shadowColor: theme.primary,
+              elevation: 5,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 5,
+            },
           ]}
           onPress={() => setModalVisible(true)}
         >
@@ -1195,318 +1219,5 @@ const DashboardScreen = ({ navigation }: any) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingBottom: 100,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  statsContainer: {
-    paddingHorizontal: 20,
-    gap: 15,
-    marginBottom: 20,
-  },
-  statCard: {
-    padding: 20,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    height: 140,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  statCardContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  bgIconContainer: {
-    position: 'absolute',
-    right: -10,
-    top: -10,
-    zIndex: -1,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  statLabel: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  trendText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  card: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-    paddingRight: 0,
-  },
-  chartHeader: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  monthSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    backgroundColor: '#00000010',
-    padding: 8,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  monthText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  donutCenter: {
-    position: 'absolute',
-    top: 90,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-  },
-  donutLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  donutValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  noDataContainer: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  legendContainer: {
-    marginTop: 20,
-    width: '100%',
-  },
-  legendItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  legendLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendName: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  legendRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  legendPercent: {
-    fontSize: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  legendAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-    width: 80,
-    textAlign: 'right',
-  },
-  goalItem: {
-    marginBottom: 20,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#33333320',
-    borderRadius: 12,
-  },
-  goalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  goalRightHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  goalName: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  goalPercentBadge: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  miniAddButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  goalAmountText: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  progressBarBg: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  noGoalsText: {
-    textAlign: 'center',
-    padding: 10,
-    color: '#888',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30, // Above tab bar usually
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-  },
-  // Empty State Styles
-  emptyStateContainer: {
-    margin: 20,
-    padding: 30,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 30,
-    paddingHorizontal: 10,
-  },
-  emptyButtonPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    marginBottom: 15,
-    width: '100%',
-    gap: 8,
-  },
-  emptyButtonTextPrimary: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyButtonSecondary: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    borderWidth: 1,
-    width: '100%',
-  },
-  emptyButtonTextSecondary: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  arrowButton: {
-    padding: 5,
-  },
-  percentBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    minWidth: 50,
-    alignItems: 'center',
-  },
-});
 
 export default DashboardScreen;
