@@ -16,10 +16,9 @@ import AddTransactionModal from '../components/AddTransactionModal';
 import { Transaction, Goal } from '../types';
 import AddGoalContributionModal from '../components/AddGoalContributionModal';
 import { formatCurrency, getCurrencySymbol } from '../utils/currency';
+import tw from 'twrnc';
 
 const screenWidth = Dimensions.get('window').width;
-
-import tw from 'twrnc';
 
 interface StatCardProps {
   label: string;
@@ -58,6 +57,16 @@ const StatCard = ({
     ? tw`${iconBgColor} opacity-20`
     : { backgroundColor: `${color}20` };
 
+  // Helper function to get trend color based on theme and positivity
+  const getTrendColor = (positive: boolean, isDark: boolean): string => {
+    if (positive) {
+      return isDark ? '#4ade80' : '#16a34a';
+    }
+    return isDark ? '#f87171' : '#dc2626';
+  };
+
+  const trendColor = getTrendColor(isPositive ?? true, theme.mode === 'dark');
+
   return (
     <View
       style={[
@@ -91,15 +100,7 @@ const StatCard = ({
               <Icon
                 name={trendDirection === 'up' ? 'arrow-up' : 'arrow-down'}
                 size={14}
-                color={
-                  isPositive
-                    ? theme.mode === 'dark'
-                      ? '#4ade80'
-                      : '#16a34a'
-                    : theme.mode === 'dark'
-                    ? '#f87171'
-                    : '#dc2626'
-                }
+                color={trendColor}
                 style={[
                   tw`mr-1`,
                   {
@@ -113,13 +114,7 @@ const StatCard = ({
                 style={[
                   tw`text-xs`,
                   {
-                    color: isPositive
-                      ? theme.mode === 'dark'
-                        ? '#4ade80'
-                        : '#16a34a'
-                      : theme.mode === 'dark'
-                      ? '#f87171'
-                      : '#dc2626',
+                    color: trendColor,
                   },
                 ]}
               >
@@ -200,6 +195,42 @@ const CenteredChartLabelWrapper: React.FC<CenteredChartLabelWrapperProps> =
   ));
 CenteredChartLabelWrapper.displayName = 'CenteredChartLabelWrapper';
 
+// Pie Chart Center Label Component
+interface PieChartCenterLabelProps {
+  totalExpense: number;
+  currencyCode: string;
+  theme: Theme;
+}
+
+const PieChartCenterLabel: React.FC<PieChartCenterLabelProps> = React.memo(
+  ({ totalExpense, currencyCode, theme }) => (
+    <View style={tw`flex-1 items-center justify-center mt-2.5`}>
+      <Text style={[tw`text-xs`, { color: theme.textSecondary }]}>TOTAL</Text>
+      <Text style={[tw`text-[22px] font-bold`, { color: theme.text }]}>
+        {formatCurrency(totalExpense, currencyCode, {
+          maximumFractionDigits: 0,
+        })}
+      </Text>
+    </View>
+  ),
+);
+PieChartCenterLabel.displayName = 'PieChartCenterLabel';
+
+// Wrapper that creates a bound component - this is the proper way to avoid the ESLint warning
+interface PieChartCenterLabelWrapperProps {
+  totalExpense: number;
+  currencyCode: string;
+  theme: Theme;
+}
+
+const createPieChartCenterLabelComponent = (
+  props: PieChartCenterLabelWrapperProps,
+) => {
+  const BoundComponent = () => <PieChartCenterLabel {...props} />;
+  BoundComponent.displayName = 'BoundPieChartCenterLabel';
+  return BoundComponent;
+};
+
 const DashboardScreen = ({ navigation }: any) => {
   // ... existing hooks
   const systemColorScheme = useColorScheme();
@@ -216,6 +247,13 @@ const DashboardScreen = ({ navigation }: any) => {
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
+
+  // Theme-dependent color helpers (to avoid inline conditional expressions)
+  const isDarkMode = theme.mode === 'dark';
+  const cardBgSecondary = isDarkMode ? '#1f2937' : '#f3f4f6';
+  const cardBgTertiary = isDarkMode ? '#1f2937' : '#f9fafb';
+  const buttonBgSecondary = isDarkMode ? '#374151' : '#e5e7eb';
+  const borderColorSecondary = isDarkMode ? '#374151' : '#e5e7eb';
 
   const [pieMonthOffset, setPieMonthOffset] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
@@ -396,6 +434,17 @@ const DashboardScreen = ({ navigation }: any) => {
   const totalExpenseForPie = pieChartData.reduce(
     (acc, curr) => acc + curr.value,
     0,
+  );
+
+  // Create a stable component reference using the factory function
+  const pieChartCenterLabel = useMemo(
+    () =>
+      createPieChartCenterLabelComponent({
+        totalExpense: totalExpenseForPie,
+        currencyCode: settings.currency,
+        theme,
+      }),
+    [totalExpenseForPie, settings.currency, theme],
   );
 
   const handleSaveTransaction = (transactionData: Omit<Transaction, 'id'>) => {
@@ -838,8 +887,7 @@ const DashboardScreen = ({ navigation }: any) => {
                 style={[
                   tw`flex-row items-center justify-between w-full p-2 rounded-xl mb-2.5`,
                   {
-                    backgroundColor:
-                      theme.mode === 'dark' ? '#1f2937' : '#f3f4f6',
+                    backgroundColor: cardBgSecondary,
                   },
                 ]}
               >
@@ -884,36 +932,7 @@ const DashboardScreen = ({ navigation }: any) => {
                       radius={110}
                       innerRadius={80}
                       innerCircleColor={theme.card}
-                      centerLabelComponent={() => {
-                        return (
-                          <View
-                            style={tw`flex-1 items-center justify-center mt-2.5`}
-                          >
-                            <Text
-                              style={[
-                                tw`text-xs`,
-                                { color: theme.textSecondary },
-                              ]}
-                            >
-                              TOTAL
-                            </Text>
-                            <Text
-                              style={[
-                                tw`text-[22px] font-bold`,
-                                { color: theme.text },
-                              ]}
-                            >
-                              {formatCurrency(
-                                totalExpenseForPie,
-                                settings.currency,
-                                {
-                                  maximumFractionDigits: 0,
-                                },
-                              )}
-                            </Text>
-                          </View>
-                        );
-                      }}
+                      centerLabelComponent={pieChartCenterLabel}
                     />
 
                     {/* Custom Legend List */}
@@ -948,10 +967,7 @@ const DashboardScreen = ({ navigation }: any) => {
                                 style={[
                                   tw`px-2 py-1 rounded-md min-w-12 items-center`,
                                   {
-                                    backgroundColor:
-                                      theme.mode === 'dark'
-                                        ? '#1f2937'
-                                        : '#e5e7eb',
+                                    backgroundColor: buttonBgSecondary,
                                   },
                                 ]}
                               >
@@ -1013,70 +1029,47 @@ const DashboardScreen = ({ navigation }: any) => {
                 return (
                   <View
                     key={goal.id}
-                    style={{
-                      backgroundColor:
-                        theme.mode === 'dark' ? '#1f2937' : '#f9fafb',
-                      borderRadius: 16,
-                      padding: 16,
-                      marginBottom: 16,
-                      borderWidth: 1,
-                      borderColor:
-                        theme.mode === 'dark' ? '#374151' : '#e5e7eb',
-                    }}
+                    style={[
+                      tw`border rounded-2xl p-4 mb-4`,
+                      {
+                        backgroundColor: cardBgTertiary,
+                        borderColor: borderColorSecondary,
+                      },
+                    ]}
                   >
                     <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 12,
-                      }}
+                      style={tw`flex-row justify-between items-center mb-3`}
                     >
                       <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: '700',
-                          color: theme.text,
-                        }}
+                        style={[tw`text-lg font-bold`, { color: theme.text }]}
                       >
                         {goal.name}
                       </Text>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 8,
-                        }}
-                      >
+                      <View style={[tw`flex-row items-center gap-3`]}>
                         <View
-                          style={{
-                            backgroundColor:
-                              theme.mode === 'dark' ? '#374151' : '#e5e7eb',
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 8,
-                          }}
+                          style={[
+                            tw`px-2 py-1 rounded-md min-w-12 items-center`,
+                            {
+                              backgroundColor: buttonBgSecondary,
+                            },
+                          ]}
                         >
                           <Text
-                            style={{
-                              color: '#3B82F6',
-                              fontSize: 12,
-                              fontWeight: 'bold',
-                            }}
+                            style={[
+                              tw`text-xs font-semibold`,
+                              { color: theme.text },
+                            ]}
                           >
                             {percent}%
                           </Text>
                         </View>
                         <TouchableOpacity
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: 12,
-                            backgroundColor:
-                              theme.mode === 'dark' ? '#374151' : '#e5e7eb',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
+                          style={[
+                            tw`w-6 h-6 rounded-full items-center justify-center`,
+                            {
+                              backgroundColor: buttonBgSecondary,
+                            },
+                          ]}
                           onPress={() => {
                             setSelectedGoal(goal);
                             setGoalModalVisible(true);
@@ -1092,24 +1085,18 @@ const DashboardScreen = ({ navigation }: any) => {
                     </View>
 
                     <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'baseline',
-                        marginBottom: 12,
-                      }}
+                      style={[tw`flex-row justify-between items-center mb-3`]}
                     >
                       <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: '500',
-                          color: theme.textSecondary,
-                        }}
+                        style={[
+                          tw`text-base font-semibold`,
+                          { color: theme.textSecondary },
+                        ]}
                       >
                         {formatCurrency(goal.currentAmount, settings.currency)}
                       </Text>
                       <Text
-                        style={{ fontSize: 12, color: theme.textSecondary }}
+                        style={[tw`text-xs`, { color: theme.textSecondary }]}
                       >
                         of{' '}
                         {formatCurrency(goal.targetAmount, settings.currency)}
@@ -1117,27 +1104,30 @@ const DashboardScreen = ({ navigation }: any) => {
                     </View>
 
                     <View
-                      style={{
-                        height: 8,
-                        backgroundColor:
-                          theme.mode === 'dark' ? '#374151' : '#e5e7eb',
-                        borderRadius: 4,
-                      }}
+                      style={[
+                        tw`h-2 rounded-sm`,
+                        {
+                          backgroundColor: buttonBgSecondary,
+                        },
+                      ]}
                     >
                       <View
-                        style={{
-                          height: '100%',
-                          borderRadius: 4,
-                          backgroundColor: '#3B82F6',
-                          width: `${percent}%`,
-                        }}
+                        style={[
+                          tw`h-2 rounded-sm bg-[#3B82F6]`,
+                          { width: `${percent}%` },
+                        ]}
                       />
                     </View>
                   </View>
                 );
               })}
               {goals.length === 0 && (
-                <Text style={[tw`text-center p-2.5`, { color: '#888' }]}>
+                <Text
+                  style={[
+                    tw`text-center p-2.5`,
+                    { color: theme.textSecondary },
+                  ]}
+                >
                   No savings goals yet.
                 </Text>
               )}
