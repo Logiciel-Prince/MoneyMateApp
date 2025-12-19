@@ -2,13 +2,13 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SectionList,
   useColorScheme,
   TouchableOpacity,
   Alert,
   TextInput,
 } from 'react-native';
+import tw from 'twrnc';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
 import { lightTheme, darkTheme } from '../theme';
@@ -137,24 +137,26 @@ const TransactionsScreen = () => {
     return (
       <TouchableOpacity
         style={[
-          styles.transactionCard,
+          tw`flex-row justify-between items-center p-4 rounded-xl mb-2.5 border`,
           { backgroundColor: theme.background, borderColor: theme.border },
         ]}
         onLongPress={() => handleEdit(item)}
       >
-        <View style={styles.transactionLeft}>
-          <Text style={[styles.description, { color: theme.text }]}>
+        <View style={tw`flex-1`}>
+          <Text
+            style={[tw`text-base font-semibold mb-1`, { color: theme.text }]}
+          >
             {item.description || (isTransfer ? 'Transfer' : item.category)}
           </Text>
-          <Text style={[styles.category, { color: theme.textSecondary }]}>
+          <Text style={[tw`text-sm`, { color: theme.textSecondary }]}>
             {isTransfer && toAccount ? `To: ${toAccount.name}` : item.category}{' '}
             • {new Date(item.date).toLocaleDateString()}
           </Text>
         </View>
-        <View style={styles.transactionRight}>
+        <View style={tw`items-end gap-2`}>
           <Text
             style={[
-              styles.amount,
+              tw`text-lg font-bold`,
               {
                 color:
                   item.type === 'income'
@@ -172,7 +174,7 @@ const TransactionsScreen = () => {
           </Text>
           <TouchableOpacity
             onPress={() => handleDelete(item.id)}
-            style={styles.deleteButton}
+            style={tw`p-1`}
           >
             <Icon name="trash-outline" size={20} color={theme.danger} />
           </TouchableOpacity>
@@ -192,26 +194,29 @@ const TransactionsScreen = () => {
   }) => (
     <View
       style={[
-        styles.sectionHeader,
+        tw`py-4 px-4 mb-4 mt-2.5 flex-row justify-between items-end rounded-xl`,
         {
           backgroundColor: theme.card,
-          borderRadius: 12,
-          paddingHorizontal: 15,
         },
       ]}
     >
       <View>
-        <Text style={[styles.headerYear, { color: theme.textSecondary }]}>
+        <Text
+          style={[
+            tw`text-xs font-medium mb-0.5`,
+            { color: theme.textSecondary },
+          ]}
+        >
           {section.year}
         </Text>
-        <Text style={[styles.headerMonth, { color: theme.text }]}>
+        <Text style={[tw`text-2xl font-bold`, { color: theme.text }]}>
           {section.month}
         </Text>
       </View>
       <View>
         <Text
           style={[
-            styles.headerTotal,
+            tw`text-base font-semibold mb-1`,
             {
               color: section.netTotal < 0 ? theme.expense : theme.textSecondary,
             },
@@ -227,16 +232,21 @@ const TransactionsScreen = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+    <View style={[tw`flex-1`, { backgroundColor: theme.background }]}>
+      <View
+        style={[
+          tw`flex-row items-center px-4 m-4 mb-1 rounded-xl h-12`,
+          { backgroundColor: theme.card },
+        ]}
+      >
         <Icon
           name="search"
           size={20}
           color={theme.textSecondary}
-          style={{ marginRight: 10 }}
+          style={tw`mr-2.5`}
         />
         <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
+          style={[tw`flex-1 text-base`, { color: theme.text }]}
           placeholder="Search transactions..."
           placeholderTextColor={theme.textSecondary}
           value={searchQuery}
@@ -254,21 +264,26 @@ const TransactionsScreen = () => {
         renderItem={renderTransaction}
         renderSectionHeader={renderSectionHeader}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={tw`p-4 pb-20`}
         stickySectionHeadersEnabled={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+          <View style={tw`flex-1 justify-center items-center pt-25`}>
             <Icon
               name="receipt-outline"
               size={64}
               color={theme.textSecondary}
             />
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+            <Text
+              style={[
+                tw`text-lg font-semibold mt-4`,
+                { color: theme.textSecondary },
+              ]}
+            >
               {searchQuery
                 ? 'No transactions match your search'
                 : 'No transactions yet'}
             </Text>
-            <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+            <Text style={[tw`text-sm mt-2`, { color: theme.textSecondary }]}>
               {searchQuery
                 ? 'Try a different keyword'
                 : 'Tap the + button to add your first transaction'}
@@ -279,7 +294,12 @@ const TransactionsScreen = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
+        style={[
+          tw`absolute right-5 bottom-5 w-14 h-14 rounded-full justify-center items-center shadow-lg`,
+          {
+            backgroundColor: theme.primary,
+          },
+        ]}
         onPress={() => {
           setEditingTransaction(undefined);
           setModalVisible(true);
@@ -302,112 +322,5 @@ const TransactionsScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    margin: 15,
-    marginBottom: 5,
-    borderRadius: 12,
-    height: 50,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  list: {
-    padding: 15,
-    paddingBottom: 80,
-  },
-  sectionHeader: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    marginBottom: 5,
-    marginTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  headerYear: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  headerMonth: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerTotal: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4, // Align with baseline of month roughly
-  },
-  transactionCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  transactionLeft: {
-    flex: 1,
-  },
-  transactionRight: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  description: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  category: {
-    fontSize: 14,
-  },
-  amount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 100,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    marginTop: 8,
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-});
 
 export default TransactionsScreen;
