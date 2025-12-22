@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   useColorScheme,
@@ -172,9 +171,19 @@ const SettingsScreen = ({ navigation }: any) => {
   };
 
   const renderCategoryItem = ({ item }: { item: Category }) => (
-    <View style={[styles.categoryItem, { borderBottomColor: theme.border }]}>
-      <View style={[tw`flex-row`, tw`items-center`, tw`gap-2.5`, tw`flex-1`]}>
-        <View style={[styles.catIcon, { backgroundColor: item.color + '20' }]}>
+    <View
+      style={[
+        tw`flex-row items-center justify-between py-3 border-b`,
+        { borderBottomColor: theme.border },
+      ]}
+    >
+      <View style={tw`flex-row items-center gap-2.5 flex-1`}>
+        <View
+          style={[
+            tw`w-8 h-8 rounded-full justify-center items-center`,
+            { backgroundColor: item.color + '20' },
+          ]}
+        >
           <Icon name={item.icon} size={18} color={item.color} />
         </View>
         <View>
@@ -214,11 +223,11 @@ const SettingsScreen = ({ navigation }: any) => {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[tw`flex-1`, { backgroundColor: theme.background }]}
       contentContainerStyle={tw`pb-10`}
     >
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
+      <View style={tw`p-5 pt-2.5`}>
+        <Text style={[tw`text-3xl font-bold`, { color: theme.text }]}>
           Settings
         </Text>
       </View>
@@ -253,8 +262,8 @@ const SettingsScreen = ({ navigation }: any) => {
         theme={theme}
       />
 
-      <View style={styles.footer}>
-        <Text style={[{ color: theme.textSecondary }, tw`text-xs`]}>
+      <View style={tw`items-center py-5`}>
+        <Text style={[tw`text-xs`, { color: theme.textSecondary }]}>
           MoneyMate v1.0.0 • Local Storage Persistence
         </Text>
       </View>
@@ -266,9 +275,16 @@ const SettingsScreen = ({ navigation }: any) => {
         animationType="slide"
         onRequestClose={() => setImportModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
+        <View
+          style={tw`flex-1 bg-[rgba(0,0,0,0.5)] justify-center items-center`}
+        >
+          <View
+            style={[
+              tw`w-[90%] p-5 rounded-2xl`,
+              { backgroundColor: theme.card },
+            ]}
+          >
+            <Text style={[tw`text-xl font-bold mb-4`, { color: theme.text }]}>
               Import Data
             </Text>
             <Text style={[{ color: theme.textSecondary }, tw`mb-2.5`]}>
@@ -276,7 +292,7 @@ const SettingsScreen = ({ navigation }: any) => {
             </Text>
             <TextInput
               style={[
-                styles.input,
+                tw`h-[150px] border rounded-lg p-2.5 text-xs mb-4 align-top`,
                 {
                   backgroundColor: theme.background,
                   color: theme.text,
@@ -289,16 +305,19 @@ const SettingsScreen = ({ navigation }: any) => {
               placeholder="{ ... }"
               placeholderTextColor={theme.textSecondary}
             />
-            <View style={styles.modalButtons}>
+            <View style={tw`flex-row justify-end gap-3`}>
               <TouchableOpacity
-                style={[styles.modalBtn, { borderColor: theme.border }]}
+                style={[
+                  tw`px-5 py-2.5 rounded-lg border min-w-[80px] items-center`,
+                  { borderColor: theme.border },
+                ]}
                 onPress={() => setImportModalVisible(false)}
               >
                 <Text style={{ color: theme.text }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  styles.modalBtn,
+                  tw`px-5 py-2.5 rounded-lg border min-w-[80px] items-center`,
                   {
                     backgroundColor: theme.primary,
                     borderColor: theme.primary,
@@ -326,24 +345,24 @@ const SettingsScreen = ({ navigation }: any) => {
         onRequestClose={() => setCurrencyModalVisible(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={tw`flex-1 bg-[rgba(0,0,0,0.5)] justify-center items-center`}
           onPress={() => setCurrencyModalVisible(false)}
           activeOpacity={1}
         >
           <View
             style={[
-              styles.modalContent,
-              { backgroundColor: theme.card, width: '80%' },
+              tw`w-[80%] p-5 rounded-2xl`,
+              { backgroundColor: theme.card },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
+            <Text style={[tw`text-xl font-bold mb-4`, { color: theme.text }]}>
               Select Currency
             </Text>
             {currencies.map(c => (
               <TouchableOpacity
                 key={c.code}
                 style={[
-                  styles.currencyOption,
+                  tw`py-4 flex-row justify-between border-b`,
                   { borderBottomColor: theme.border },
                 ]}
                 onPress={() => {
@@ -370,16 +389,14 @@ const SettingsScreen = ({ navigation }: any) => {
         presentationStyle="pageSheet"
         onRequestClose={() => setCategoriesModalVisible(false)}
       >
-        <View
-          style={[
-            styles.fullScreenModal,
-            { backgroundColor: theme.background },
-          ]}
-        >
+        <View style={[tw`flex-1`, { backgroundColor: theme.background }]}>
           <View
-            style={[styles.modalHeader, { borderBottomColor: theme.border }]}
+            style={[
+              tw`flex-row justify-between items-center p-5 border-b`,
+              { borderBottomColor: theme.border },
+            ]}
           >
-            <Text style={[styles.modalHeaderTitle, { color: theme.text }]}>
+            <Text style={[tw`text-xl font-bold`, { color: theme.text }]}>
               Manage Categories
             </Text>
             <TouchableOpacity onPress={() => setCategoriesModalVisible(false)}>
@@ -391,13 +408,16 @@ const SettingsScreen = ({ navigation }: any) => {
             data={categories}
             keyExtractor={item => item.id}
             renderItem={renderCategoryItem}
-            contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+            contentContainerStyle={tw`p-5 pb-25`}
           />
 
           <View
             style={[
-              styles.addCategoryContainer,
-              { backgroundColor: theme.card, borderTopColor: theme.border },
+              tw`p-5 border-t`,
+              {
+                backgroundColor: theme.card,
+                borderTopColor: theme.border,
+              },
             ]}
           >
             <Text
@@ -405,14 +425,13 @@ const SettingsScreen = ({ navigation }: any) => {
             >
               Add New Category
             </Text>
-            <View style={[tw`flex-row`, tw`gap-2.5`, tw`mb-2.5`]}>
+            <View style={tw`flex-row gap-2.5 mb-2.5`}>
               <TouchableOpacity
                 style={[
-                  styles.typeBtn,
-                  newCatType === CategoryType.EXPENSE && {
-                    backgroundColor: '#ef4444',
-                    borderColor: '#ef4444',
-                  },
+                  tw`py-2 px-4 rounded-full border`,
+                  newCatType === CategoryType.EXPENSE
+                    ? tw`bg-[#ef4444] border-[#ef4444]`
+                    : tw`border-[#888]`,
                 ]}
                 onPress={() => setNewCatType(CategoryType.EXPENSE)}
               >
@@ -427,11 +446,10 @@ const SettingsScreen = ({ navigation }: any) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  styles.typeBtn,
-                  newCatType === CategoryType.INCOME && {
-                    backgroundColor: '#10b981',
-                    borderColor: '#10b981',
-                  },
+                  tw`py-2 px-4 rounded-full border`,
+                  newCatType === CategoryType.INCOME
+                    ? tw`bg-[#10b981] border-[#10b981]`
+                    : tw`border-[#888]`,
                 ]}
                 onPress={() => setNewCatType(CategoryType.INCOME)}
               >
@@ -445,14 +463,11 @@ const SettingsScreen = ({ navigation }: any) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            <View style={[tw`flex-row`, tw`gap-2.5`]}>
+            <View style={tw`flex-row gap-2.5`}>
               <TextInput
                 style={[
-                  styles.input,
+                  tw`flex-1 h-[45px] border rounded-lg p-2.5`,
                   {
-                    flex: 1,
-                    height: 45,
-                    marginBottom: 0,
                     backgroundColor: theme.background,
                     color: theme.text,
                     borderColor: theme.border,
@@ -465,8 +480,8 @@ const SettingsScreen = ({ navigation }: any) => {
               />
               <TouchableOpacity
                 style={[
-                  styles.actionBtn,
-                  { backgroundColor: theme.primary, justifyContent: 'center' },
+                  tw`px-4 py-2 rounded-lg justify-center`,
+                  { backgroundColor: theme.primary },
                 ]}
                 onPress={handleAddCategory}
               >
@@ -480,117 +495,5 @@ const SettingsScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '90%',
-    padding: 20,
-    borderRadius: 16,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  input: {
-    height: 150,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    textAlignVertical: 'top',
-    fontSize: 12,
-    marginBottom: 16,
-    fontFamily: 'monospace',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  modalBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  currencyOption: {
-    paddingVertical: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-  },
-  fullScreenModal: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-  },
-  modalHeaderTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  categoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  catIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addCategoryContainer: {
-    padding: 20,
-    borderTopWidth: 1,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  typeBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#888',
-  },
-  actionBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-});
-
 export default SettingsScreen;
+

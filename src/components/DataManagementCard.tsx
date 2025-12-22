@@ -115,7 +115,7 @@ const DataManagementCard: React.FC<DataManagementCardProps> = ({
           color="#ef4444"
           style={tw`mr-2.5`}
         />
-        <View style={tw`flex-1`}>
+        <View style={tw`flex-1 rounded-lg`}>
           <Text style={tw`text-base font-semibold text-[#ef4444]`}>
             Clear All Data
           </Text>
