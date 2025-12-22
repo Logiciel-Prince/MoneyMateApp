@@ -1,13 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Theme } from '../theme';
+import tw from 'twrnc';
 
 interface ThemeSelectorProps {
   currentTheme: 'light' | 'dark' | 'system';
@@ -64,19 +59,33 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.card }]}>
-      <Text style={[styles.cardTitle, { color: theme.text }]}>Appearance</Text>
-      <View style={styles.row}>
-        <Text style={[styles.label, { color: theme.textSecondary }]}>
+    <View
+      style={[
+        tw`rounded-2xl mx-4 mb-4 p-4`,
+        {
+          backgroundColor: theme.card,
+        },
+      ]}
+    >
+      <Text style={[tw`text-lg font-bold mb-4`, { color: theme.text }]}>
+        Appearance
+      </Text>
+      <View style={tw`flex-row justify-between items-center`}>
+        <Text
+          style={[tw`text-base font-medium`, { color: theme.textSecondary }]}
+        >
           Theme
         </Text>
         <View
-          style={[styles.themeToggle, { backgroundColor: theme.background }]}
+          style={[
+            tw`flex-row p-[3px] rounded-[20px] gap-[2px] relative`,
+            { backgroundColor: theme.background },
+          ]}
         >
           {/* Animated sliding background indicator */}
           <Animated.View
             style={[
-              styles.activeIndicator,
+              tw`absolute top-[3px] left-[3px] w-[44px] h-[32px] rounded-2xl`,
               {
                 backgroundColor: theme.card,
                 transform: [{ translateX: slideAnim }],
@@ -86,7 +95,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
           <Animated.View style={{ transform: [{ scale: scaleLight }] }}>
             <TouchableOpacity
-              style={styles.themeBtn}
+              style={tw`w-[44px] h-[32px] rounded-2xl items-center justify-center z-10`}
               onPress={() => handlePress('light', scaleLight)}
               activeOpacity={0.7}
             >
@@ -102,13 +111,13 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
           <Animated.View style={{ transform: [{ scale: scaleSystem }] }}>
             <TouchableOpacity
-              style={styles.themeBtn}
+              style={tw`w-[44px] h-[32px] rounded-2xl items-center justify-center z-10`}
               onPress={() => handlePress('system', scaleSystem)}
               activeOpacity={0.7}
             >
               <Text
                 style={[
-                  styles.autoText,
+                  tw`font-semibold text-xs`,
                   {
                     color:
                       currentTheme === 'system'
@@ -124,7 +133,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
           <Animated.View style={{ transform: [{ scale: scaleDark }] }}>
             <TouchableOpacity
-              style={styles.themeBtn}
+              style={tw`w-[44px] h-[32px] rounded-2xl items-center justify-center z-10`}
               onPress={() => handlePress('dark', scaleDark)}
               activeOpacity={0.7}
             >
@@ -141,64 +150,5 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  themeToggle: {
-    flexDirection: 'row',
-    padding: 3,
-    borderRadius: 20,
-    gap: 2,
-    position: 'relative',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    top: 3,
-    left: 3,
-    width: 44,
-    height: 32,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-  },
-  themeBtn: {
-    width: 44,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  autoText: {
-    fontWeight: '600',
-    fontSize: 12,
-  },
-});
-
 export default ThemeSelector;
+
