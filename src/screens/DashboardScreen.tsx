@@ -1,238 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   useColorScheme,
-  Dimensions,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarChart, PieChart } from 'react-native-gifted-charts';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
-import { lightTheme, darkTheme, Theme } from '../theme';
+import { lightTheme, darkTheme } from '../theme';
 import AddTransactionModal from '../components/AddTransactionModal';
 import { Transaction, Goal } from '../types';
 import AddGoalContributionModal from '../components/AddGoalContributionModal';
-import { formatCurrency, getCurrencySymbol } from '../utils/currency';
+import IncomeExpenseStats from '../components/IncomeExpenseStats';
+import IncomeExpenseChart from '../components/IncomeExpenseChart';
+import ExpenseBreakdownChart from '../components/ExpenseBreakdownChart';
+import SavingsGoalsList from '../components/SavingsGoalsList';
 import tw from 'twrnc';
 
-const screenWidth = Dimensions.get('window').width;
-
-interface StatCardProps {
-  label: string;
-  value: string | number; // Allow formatted string
-  icon: string;
-  color: string; // Can be a tailwind class like 'text-green-600' or hex
-  theme: Theme;
-  trend?: string; // Text like "4.2% vs last month"
-  trendDirection?: 'up' | 'down';
-  isPositive?: boolean;
-  currencyCode?: string;
-}
-
-const StatCard = ({
-  label,
-  value,
-  icon,
-  color, // e.g. "text-green-600" or hex
-  theme,
-  trend,
-  trendDirection,
-  isPositive,
-  currencyCode = 'USD',
-}: StatCardProps) => {
-  // Resolve color: if it's a tailwind class, use tw, else use as is
-  const iconColorStyle =
-    color.startsWith('text-') || color.startsWith('bg-')
-      ? tw`${color}`
-      : { color: color };
-  const iconColor = (iconColorStyle as any).color || color;
-  const iconBgColor = color.startsWith('text-')
-    ? color.replace('text-', 'bg-').replace('600', '100')
-    : `${color}20`; // rough approx for bg
-
-  const bgStyle = color.startsWith('text-')
-    ? tw`${iconBgColor} opacity-20`
-    : { backgroundColor: `${color}20` };
-
-  // Helper function to get trend color based on theme and positivity
-  const getTrendColor = (positive: boolean, isDark: boolean): string => {
-    if (positive) {
-      return isDark ? '#4ade80' : '#16a34a';
-    }
-    return isDark ? '#f87171' : '#dc2626';
-  };
-
-  const trendColor = getTrendColor(isPositive ?? true, theme.mode === 'dark');
-
-  return (
-    <View
-      style={[
-        tw`p-4 rounded-2xl mb-4 shadow-md`,
-        {
-          backgroundColor: theme.card,
-        },
-      ]}
-    >
-      <View style={tw`flex-row justify-between items-start`}>
-        <View>
-          <View
-            style={[
-              tw`w-10 h-10 rounded-full justify-center items-center mb-2`,
-              bgStyle,
-            ]}
-          >
-            <Icon name={icon} size={20} color={iconColor} />
-          </View>
-          <Text style={[tw`text-sm mb-1`, { color: theme.textSecondary }]}>
-            {label}
-          </Text>
-          <Text style={[tw`text-2xl font-bold mb-1`, { color: theme.text }]}>
-            {typeof value === 'number'
-              ? formatCurrency(value, currencyCode)
-              : value}
-          </Text>
-
-          {trend && (
-            <View style={tw`flex-row items-center`}>
-              <Icon
-                name={trendDirection === 'up' ? 'arrow-up' : 'arrow-down'}
-                size={14}
-                color={trendColor}
-                style={[
-                  tw`mr-1`,
-                  {
-                    transform: [
-                      { rotate: trendDirection === 'up' ? '45deg' : '-45deg' },
-                    ],
-                  },
-                ]}
-              />
-              <Text
-                style={[
-                  tw`text-xs`,
-                  {
-                    color: trendColor,
-                  },
-                ]}
-              >
-                {trend}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Large background icon */}
-        <View style={tw`absolute right-0 -mr-2 opacity-5`}>
-          <Icon name={icon} size={100} color={theme.text} />
-        </View>
-      </View>
-    </View>
-  );
-};
-
-// Chart Label Component (defined outside to avoid re-creation on each render)
-interface ChartLabelProps {
-  label: string;
-  theme: Theme;
-}
-
-const ChartLabel: React.FC<ChartLabelProps> = ({ label, theme }) => (
-  <View style={tw`w-12 ml-1.5`}>
-    <Text
-      style={[tw`text-xs text-center`, { color: theme.textSecondary }]}
-      numberOfLines={1}
-    >
-      {label}
-    </Text>
-  </View>
-);
-
-// Centered Chart Label Component (for grouped bars)
-interface CenteredChartLabelProps {
-  label: string;
-  theme: Theme;
-  width: number;
-}
-
-const CenteredChartLabel: React.FC<CenteredChartLabelProps> = ({
-  label,
-  theme,
-  width,
-}) => (
-  <View style={[tw`items-center justify-center mt-1`, { width }]}>
-    <Text
-      style={[tw`text-xs text-center`, { color: theme.textSecondary }]}
-      numberOfLines={1}
-    >
-      {label}
-    </Text>
-  </View>
-);
-
-// Wrapper components that accept props and can be used as stable references
-interface ChartLabelWrapperProps {
-  label: string;
-  theme: Theme;
-}
-
-const ChartLabelWrapper: React.FC<ChartLabelWrapperProps> = React.memo(
-  ({ label, theme }) => <ChartLabel label={label} theme={theme} />,
-);
-ChartLabelWrapper.displayName = 'ChartLabelWrapper';
-
-interface CenteredChartLabelWrapperProps {
-  label: string;
-  theme: Theme;
-  width: number;
-}
-
-const CenteredChartLabelWrapper: React.FC<CenteredChartLabelWrapperProps> =
-  React.memo(({ label, theme, width }) => (
-    <CenteredChartLabel label={label} theme={theme} width={width} />
-  ));
-CenteredChartLabelWrapper.displayName = 'CenteredChartLabelWrapper';
-
-// Pie Chart Center Label Component
-interface PieChartCenterLabelProps {
-  totalExpense: number;
-  currencyCode: string;
-  theme: Theme;
-}
-
-const PieChartCenterLabel: React.FC<PieChartCenterLabelProps> = React.memo(
-  ({ totalExpense, currencyCode, theme }) => (
-    <View style={tw`flex-1 items-center justify-center mt-2.5`}>
-      <Text style={[tw`text-xs`, { color: theme.textSecondary }]}>TOTAL</Text>
-      <Text style={[tw`text-[22px] font-bold`, { color: theme.text }]}>
-        {formatCurrency(totalExpense, currencyCode, {
-          maximumFractionDigits: 0,
-        })}
-      </Text>
-    </View>
-  ),
-);
-PieChartCenterLabel.displayName = 'PieChartCenterLabel';
-
-// Wrapper that creates a bound component - this is the proper way to avoid the ESLint warning
-interface PieChartCenterLabelWrapperProps {
-  totalExpense: number;
-  currencyCode: string;
-  theme: Theme;
-}
-
-const createPieChartCenterLabelComponent = (
-  props: PieChartCenterLabelWrapperProps,
-) => {
-  const BoundComponent = () => <PieChartCenterLabel {...props} />;
-  BoundComponent.displayName = 'BoundPieChartCenterLabel';
-  return BoundComponent;
-};
-
 const DashboardScreen = ({ navigation }: any) => {
-  // ... existing hooks
   const systemColorScheme = useColorScheme();
   const {
     transactions,
@@ -248,32 +35,21 @@ const DashboardScreen = ({ navigation }: any) => {
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
-  // Theme-dependent color helpers (to avoid inline conditional expressions)
-  const isDarkMode = theme.mode === 'dark';
-  const cardBgSecondary = isDarkMode ? '#1f2937' : '#f3f4f6';
-  const cardBgTertiary = isDarkMode ? '#1f2937' : '#f9fafb';
-  const buttonBgSecondary = isDarkMode ? '#374151' : '#e5e7eb';
-  const borderColorSecondary = isDarkMode ? '#374151' : '#e5e7eb';
-
-  const [pieMonthOffset, setPieMonthOffset] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
-  // --- Calculations ---
-  // Helper for safe date parsing
+  // --- Calculations for Stats ---
   const parseDate = (dateStr: string) => {
-    // Try standard constructor
     let d = new Date(dateStr);
     if (!isNaN(d.getTime())) return d;
 
-    // Attempt to handle "YYYY-MM-DD HH:mm" by replacing space with T
     if (typeof dateStr === 'string' && dateStr.includes(' ')) {
       d = new Date(dateStr.replace(' ', 'T'));
       if (!isNaN(d.getTime())) return d;
     }
 
-    return new Date(); // Fallback to now (should not happen with good data)
+    return new Date();
   };
 
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -311,142 +87,6 @@ const DashboardScreen = ({ navigation }: any) => {
   const incomeChange = calculateChange(monthlyIncome, prevMonthlyIncome);
   const expenseChange = calculateChange(monthlyExpense, prevMonthlyExpense);
 
-  const sectionCount = 5;
-
-  // Bar Chart Data
-  const { barChartData, chartMaxValue, stepValue } = useMemo(() => {
-    const data: any[] = [];
-    let monthsBack = 5; // Default max 6 months
-
-    if (transactions.length > 0) {
-      const dates = transactions
-        .map(t => parseDate(t.date).getTime())
-        .filter(d => !isNaN(d));
-
-      if (dates.length > 0) {
-        const minTimestamp = Math.min(...dates);
-        const minDate = new Date(minTimestamp);
-        const now = new Date();
-
-        const diffYears = now.getFullYear() - minDate.getFullYear();
-        const diffMonths = diffYears * 12 + now.getMonth() - minDate.getMonth();
-
-        // We show at most 5 months (indices 0 to 4)
-        monthsBack = Math.min(Math.max(diffMonths, 0), 4);
-      } else {
-        monthsBack = 0;
-      }
-    } else {
-      monthsBack = 0;
-    }
-
-    for (let i = monthsBack; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const label = d
-        .toLocaleString('default', { month: 'short' })
-        .substring(0, 3);
-      const inc = getMonthlyTotal('income', d);
-      const exp = getMonthlyTotal('expense', d);
-
-      data.push({
-        value: inc,
-        frontColor: theme.mode === 'dark' ? '#4ade80' : '#16a34a',
-        spacing: 6,
-        label: label, // Store label for later access
-        // eslint-disable-next-line react/no-unstable-nested-components
-        labelComponent: () => <ChartLabelWrapper label={label} theme={theme} />,
-      });
-      data.push({
-        value: exp,
-        frontColor: theme.mode === 'dark' ? '#f87171' : '#dc2626',
-        spacing: 32, // larger spacing after the group
-      });
-    }
-
-    const rawMax = Math.max(...data.map((d: any) => d.value || 0), 100);
-    const maxValue = rawMax;
-    const step = rawMax / sectionCount;
-
-    return { barChartData: data, chartMaxValue: maxValue, stepValue: step };
-  }, [transactions, theme, getMonthlyTotal]);
-
-  // Pie Chart Data
-  const pieDisplayDate = new Date();
-  pieDisplayDate.setMonth(pieDisplayDate.getMonth() + pieMonthOffset);
-
-  const pieChartData = useMemo(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() + pieMonthOffset);
-
-    const monthlyExpenses = transactions.filter(
-      t =>
-        t.type === 'expense' &&
-        new Date(t.date).getMonth() === date.getMonth() &&
-        new Date(t.date).getFullYear() === date.getFullYear(),
-    );
-
-    const grouped: { [key: string]: number } = {};
-    monthlyExpenses.forEach(t => {
-      const amt = Number(t.amount) || 0;
-      if (amt > 0) {
-        grouped[t.category] = (grouped[t.category] || 0) + amt;
-      }
-    });
-
-    // Consistent color palette
-    const palette = [
-      '#8B5CF6',
-      '#F97316',
-      '#EF4444',
-      '#84CC16',
-      '#EC4899',
-      '#3B82F6',
-      '#EAB308',
-      '#14B8A6',
-      '#6366F1',
-      '#D946EF',
-      '#06B6D4',
-      '#F59E0B',
-    ];
-
-    const getCategoryColor = (cat: string) => {
-      let hash = 0;
-      for (let i = 0; i < cat.length; i++) {
-        // eslint-disable-next-line no-bitwise
-        hash = cat.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return palette[Math.abs(hash) % palette.length];
-    };
-
-    let entries = Object.entries(grouped)
-      .map(([name, amount]) => ({
-        name,
-        value: amount,
-        color: getCategoryColor(name),
-        text: '', // No text on slices
-      }))
-      .sort((a, b) => b.value - a.value);
-
-    return entries;
-  }, [transactions, pieMonthOffset]);
-
-  const totalExpenseForPie = pieChartData.reduce(
-    (acc, curr) => acc + curr.value,
-    0,
-  );
-
-  // Create a stable component reference using the factory function
-  const pieChartCenterLabel = useMemo(
-    () =>
-      createPieChartCenterLabelComponent({
-        totalExpense: totalExpenseForPie,
-        currencyCode: settings.currency,
-        theme,
-      }),
-    [totalExpenseForPie, settings.currency, theme],
-  );
-
   const handleSaveTransaction = (transactionData: Omit<Transaction, 'id'>) => {
     const newTransaction: Transaction = {
       ...transactionData,
@@ -464,10 +104,8 @@ const DashboardScreen = ({ navigation }: any) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
 
-    // 1. Update Goal Amount
     updateGoal(goalId, { currentAmount: goal.currentAmount + amount });
 
-    // 2. If account selected, deduct money and create transaction
     if (accountId) {
       const account = accounts.find(a => a.id === accountId);
       if (account) {
@@ -475,9 +113,9 @@ const DashboardScreen = ({ navigation }: any) => {
 
         const newTransaction: Transaction = {
           id: Date.now().toString(),
-          type: 'expense', // Treating as expense/transfer
+          type: 'expense',
           amount: amount,
-          category: 'Savings', // Ideally we should have a generic category or pass it
+          category: 'Savings',
           description: `Contribution to ${goal.name}`,
           date: new Date().toISOString().split('T')[0],
           accountId: accountId,
@@ -567,576 +205,46 @@ const DashboardScreen = ({ navigation }: any) => {
           </View>
         ) : (
           <>
-            {/* Vertical Stat Cards */}
-            <View style={tw`px-5 gap-4 mb-5`}>
-              <StatCard
-                label="Total Balance"
-                value={totalBalance}
-                icon="wallet-outline"
-                color={theme.primary}
-                theme={theme}
-                currencyCode={settings.currency}
-              />
-              <StatCard
-                label="Monthly Income"
-                value={monthlyIncome}
-                icon="trending-up-outline"
-                color={theme.income}
-                trend={`${Math.abs(incomeChange).toFixed(1)}% vs last month`}
-                trendDirection={incomeChange >= 0 ? 'up' : 'down'}
-                isPositive={incomeChange >= 0}
-                theme={theme}
-                currencyCode={settings.currency}
-              />
-              <StatCard
-                label="Monthly Expense"
-                value={monthlyExpense}
-                icon="trending-down-outline"
-                color={theme.expense}
-                trend={`${Math.abs(expenseChange).toFixed(1)}% vs last month`}
-                trendDirection={expenseChange >= 0 ? 'up' : 'down'}
-                isPositive={expenseChange < 0}
-                theme={theme}
-                currencyCode={settings.currency}
-              />
-            </View>
+            {/* Income & Expense Stats */}
+            <IncomeExpenseStats
+              totalBalance={totalBalance}
+              monthlyIncome={monthlyIncome}
+              monthlyExpense={monthlyExpense}
+              incomeChange={incomeChange}
+              expenseChange={expenseChange}
+              theme={theme}
+              currencyCode={settings.currency}
+            />
 
-            {/* Bar Chart */}
-            <View
-              style={[
-                tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
-                {
-                  backgroundColor: theme.card,
-                },
-              ]}
-            >
-              <View style={tw`flex-row justify-between items-center mb-5`}>
-                <Text style={[tw`text-lg font-bold`, { color: theme.text }]}>
-                  Income & Expense History
-                </Text>
-              </View>
+            {/* Income & Expense Chart */}
+            <IncomeExpenseChart
+              transactions={transactions}
+              theme={theme}
+              currencyCode={settings.currency}
+            />
 
-              {barChartData.length > 0 ? (
-                // Centering Logic for 'Groww' style
-                // Available width approx screenWidth - 80 (padding + Y-axis)
-                // One month group width = 22 (inc) + 12 (gap) + 22 (exp) = 56
-                // + 32 spacing after group = 88 per month approx
-                // We calculate precise initialSpacing to center content.
-                (() => {
-                  // Chart container effective width
-                  // Card padding (20*2) + margins (20) ~ 60.
-                  // Y-Axis takes space? We set yAxisThickness=0 but labels exist.
-                  // Let's assume safe usable width is screenWidth - 100.
-                  const availableWidth = screenWidth - 100;
+            {/* Expense Breakdown */}
+            <ExpenseBreakdownChart
+              transactions={transactions}
+              theme={theme}
+              currencyCode={settings.currency}
+            />
 
-                  let barWidth = 22;
-                  let groupSpacing = 32;
-                  let internalSpacing = 10;
-                  let initialSpacing = 20;
-
-                  // Dynamic sizing based on data quantity
-                  const numGroups = Math.ceil(barChartData.length / 2);
-
-                  if (numGroups === 1) {
-                    // 1 Month: Make bars FAT (mimic user image)
-                    // available width split: 35% bar1, 10% gap, 35% bar2, 20% sides
-                    barWidth = availableWidth * 0.35;
-                    internalSpacing = availableWidth * 0.1;
-                    groupSpacing = 0; // No other groups
-
-                    // Center it
-                    const contentWidth = barWidth * 2 + internalSpacing;
-                    initialSpacing = (availableWidth - contentWidth) / 2;
-                  } else if (numGroups === 2) {
-                    // 2 Months: Wider bars but ensure they fit
-                    // Fit 2 groups: [B G B] -- S -- [B G B]
-                    // Total roughly 4 bars + 3 gaps.
-                    barWidth = availableWidth / 7.5;
-                    internalSpacing = barWidth / 2;
-                    groupSpacing = barWidth;
-
-                    const groupWidth = barWidth * 2 + internalSpacing;
-                    const totalWidth = groupWidth * 2 + groupSpacing;
-                    initialSpacing = (availableWidth - totalWidth) / 2;
-                  } else if (numGroups === 3) {
-                    // 3 Months: Needs to fit 3 groups
-                    // 6 bars total + gaps.
-                    // Factor ~11 (6 bars + 3 gaps + margins)
-                    barWidth = availableWidth / 11;
-                    internalSpacing = 5;
-                    groupSpacing = barWidth * 0.8;
-
-                    const groupWidth = barWidth * 2 + internalSpacing;
-                    // 3 groups, 2 spaces between them
-                    const totalWidth = groupWidth * 3 + groupSpacing * 2;
-                    initialSpacing = (availableWidth - totalWidth) / 2;
-                  } else if (numGroups === 4) {
-                    // 4 Months: Fits nicely with slightly tighter naming
-                    // 8 bars + 3 gaps between groups
-                    barWidth = availableWidth / 14;
-                    internalSpacing = 4;
-                    groupSpacing = 12;
-
-                    const groupWidth = barWidth * 2 + internalSpacing;
-                    // 4 groups, 3 spaces between them
-                    const totalWidth = groupWidth * 4 + groupSpacing * 3;
-                    initialSpacing = (availableWidth - totalWidth) / 2;
-                  } else {
-                    // Standard sizing for many months (>3)
-                    barWidth = 16;
-                    groupSpacing = 20;
-                    internalSpacing = 4;
-
-                    // Helper to calc width
-                    const gWidth = barWidth * 2 + internalSpacing;
-                    const totWidth =
-                      numGroups * gWidth +
-                      Math.max(0, numGroups - 1) * groupSpacing;
-
-                    // If still smaller than screen, center it
-                    if (totWidth < availableWidth) {
-                      initialSpacing = (availableWidth - totWidth) / 2;
-                    } else {
-                      initialSpacing = 20; // Default left padding for scrollable
-                    }
-                  }
-
-                  // Apply spacing and label centering to data
-                  const structuredData = barChartData.map((item, index) => {
-                    const isIncomeBar = index % 2 === 0;
-                    // For 1 or 2 months, we want the label centered across the group (Income + Expense)
-                    // Group width = (barWidth * 2) + internalSpacing.
-                    // We attach the label to the Income bar.
-                    const groupWidth = barWidth * 2 + internalSpacing;
-
-                    const newItem = {
-                      ...item,
-                      spacing: isIncomeBar ? internalSpacing : groupSpacing,
-                    };
-
-                    // Update label component to center under the GROUP
-                    if (isIncomeBar && item.label) {
-                      newItem.labelComponent = () => (
-                        <CenteredChartLabelWrapper
-                          label={item.label}
-                          theme={theme}
-                          width={groupWidth}
-                        />
-                      );
-                    }
-                    return newItem;
-                  });
-
-                  return (
-                    <BarChart
-                      key={`bar-chart-${transactions.length}-${barWidth}`}
-                      data={structuredData}
-                      barWidth={barWidth}
-                      initialSpacing={Math.max(0, initialSpacing)}
-                      disableScroll
-                      roundedTop
-                      roundedBottom={false}
-                      rulesType="dashed"
-                      rulesColor={theme.border}
-                      rulesLength={screenWidth - 100}
-                      xAxisThickness={0}
-                      yAxisThickness={0}
-                      yAxisTextStyle={[
-                        tw`text-[10px]`,
-                        { color: theme.textSecondary },
-                      ]}
-                      noOfSections={sectionCount}
-                      maxValue={chartMaxValue}
-                      stepValue={stepValue > 0 ? stepValue : 10}
-                      barBorderRadius={4}
-                      isAnimated
-                      animationDuration={500}
-                      yAxisLabelPrefix={getCurrencySymbol(settings.currency)}
-                      formatYLabel={(label: string) => {
-                        if (!label) return '0';
-                        const value = parseFloat(label);
-                        if (isNaN(value)) return label;
-
-                        const format = (
-                          val: number,
-                          divisor: number,
-                          suffix: string,
-                        ) => {
-                          const v = val / divisor;
-                          return (
-                            (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + suffix
-                          );
-                        };
-
-                        if (value >= 10000000) {
-                          return format(value, 10000000, 'Cr');
-                        }
-                        if (value >= 100000) {
-                          return format(value, 100000, 'L');
-                        }
-                        if (value >= 1000) {
-                          return format(value, 1000, 'k');
-                        }
-                        return value.toFixed(0);
-                      }}
-                      renderTooltip={(item: any, index: number) => {
-                        const minTooltipWidth = 70;
-                        const tooltipWidth = Math.max(
-                          barWidth,
-                          minTooltipWidth,
-                        );
-
-                        // Shift tooltip left for the last bar to prevent cut-off
-                        const isLastBar = index === structuredData.length - 1;
-                        const isFirstBar = index === 0;
-
-                        let marginLeft = -(tooltipWidth / 2);
-                        if (isLastBar) {
-                          marginLeft = -(tooltipWidth - barWidth / 2);
-                        } else if (isFirstBar) {
-                          marginLeft = -(barWidth / 2);
-                        }
-
-                        return (
-                          <View
-                            style={[
-                              tw`absolute items-center justify-center rounded-2xl py-0.5`,
-                              {
-                                marginLeft: marginLeft,
-                                width: tooltipWidth,
-                                backgroundColor: theme.text,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                tw`text-xs font-bold`,
-                                {
-                                  color: theme.card,
-                                },
-                              ]}
-                              numberOfLines={1}
-                              adjustsFontSizeToFit
-                            >
-                              {getCurrencySymbol(settings.currency)}
-                              {item.value.toLocaleString()}
-                            </Text>
-                          </View>
-                        );
-                      }}
-                    />
-                  );
-                })()
-              ) : (
-                <View style={tw`h-50 justify-center items-center`}>
-                  <Text style={{ color: theme.textSecondary }}>
-                    No data available
-                  </Text>
-                </View>
-              )}
-              {/* Legend for Bar Chart */}
-              <View style={tw`flex-row justify-center mt-4 gap-5`}>
-                <View style={tw`flex-row items-center`}>
-                  <View style={tw`w-2 h-2 rounded-full mr-2 bg-green-500`} />
-                  <Text
-                    style={[
-                      tw`text-xs font-bold`,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Income
-                  </Text>
-                </View>
-                <View style={tw`flex-row items-center`}>
-                  <View style={tw`w-2 h-2 rounded-full mr-2 bg-red-400`} />
-                  <Text
-                    style={[
-                      tw`text-xs font-bold`,
-                      { color: theme.textSecondary },
-                    ]}
-                  >
-                    Expense
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Expense Breakdown (Donut) */}
-            <View
-              style={[
-                tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
-                {
-                  backgroundColor: theme.card,
-                },
-              ]}
-            >
-              <View style={tw`flex-row items-center mb-2.5`}>
-                <Icon
-                  name="pie-chart-outline"
-                  size={20}
-                  color={theme.text}
-                  style={tw`mr-3`}
-                />
-                <Text style={[tw`text-lg font-bold`, { color: theme.text }]}>
-                  Expense Breakdown
-                </Text>
-              </View>
-
-              {/* Month Selector */}
-              <View
-                style={[
-                  tw`flex-row items-center justify-between w-full p-2 rounded-xl mb-2.5`,
-                  {
-                    backgroundColor: cardBgSecondary,
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={() => setPieMonthOffset(p => p - 1)}
-                  style={tw`p-1.5`}
-                >
-                  <Icon
-                    name="chevron-back"
-                    size={18}
-                    color={theme.textSecondary}
-                  />
-                </TouchableOpacity>
-                <Text
-                  style={[tw`text-base font-semibold`, { color: theme.text }]}
-                >
-                  {pieDisplayDate.toLocaleString('default', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setPieMonthOffset(p => p + 1)}
-                  style={tw`p-1.5`}
-                >
-                  <Icon
-                    name="chevron-forward"
-                    size={18}
-                    color={theme.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              <View style={tw`flex-1 items-center justify-center mt-2.5`}>
-                {pieChartData.length > 0 ? (
-                  <>
-                    <PieChart
-                      key={`pie-chart-${transactions.length}-${totalExpenseForPie}-${pieMonthOffset}`}
-                      data={pieChartData}
-                      donut
-                      showText={false} // Hide customized text on chart slices
-                      radius={110}
-                      innerRadius={80}
-                      innerCircleColor={theme.card}
-                      centerLabelComponent={pieChartCenterLabel}
-                    />
-
-                    {/* Custom Legend List */}
-                    <View style={tw`mt-5 w-full`}>
-                      {/* Fixed height scrollable container for list */}
-                      <ScrollView style={tw`max-h-[250px]`} nestedScrollEnabled>
-                        {pieChartData.map((item, index) => (
-                          <View
-                            key={index}
-                            style={tw`flex-row justify-between items-center mb-3`}
-                          >
-                            <View style={tw`flex-row items-center gap-2.5`}>
-                              <View
-                                style={[
-                                  tw`w-2.5 h-2.5 rounded-full`,
-                                  { backgroundColor: item.color },
-                                ]}
-                              />
-                              <Text
-                                numberOfLines={1}
-                                style={[
-                                  tw`text-sm font-medium`,
-                                  { color: theme.textSecondary },
-                                ]}
-                              >
-                                {item.name}
-                              </Text>
-                            </View>
-
-                            <View style={tw`flex-row items-center gap-3`}>
-                              <View
-                                style={[
-                                  tw`px-2 py-1 rounded-md min-w-12 items-center`,
-                                  {
-                                    backgroundColor: buttonBgSecondary,
-                                  },
-                                ]}
-                              >
-                                <Text
-                                  style={[
-                                    tw`text-xs font-semibold`,
-                                    { color: theme.textSecondary },
-                                  ]}
-                                >
-                                  {(
-                                    (item.value / totalExpenseForPie) *
-                                    100
-                                  ).toFixed(1)}
-                                  %
-                                </Text>
-                              </View>
-                              <Text
-                                style={[
-                                  tw`text-sm font-semibold w-20 text-right`,
-                                  { color: theme.text },
-                                ]}
-                              >
-                                {formatCurrency(item.value, settings.currency)}
-                              </Text>
-                            </View>
-                          </View>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  </>
-                ) : (
-                  <View style={tw`h-50 justify-center items-center`}>
-                    <Text style={{ color: theme.textSecondary }}>
-                      No expenses for this month
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Top Savings Goals */}
-            <View
-              style={[
-                tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
-                {
-                  backgroundColor: theme.card,
-                },
-              ]}
-            >
-              <Text style={[tw`text-lg font-bold mb-5`, { color: theme.text }]}>
-                Top Savings Goals
-              </Text>
-              {goals.slice(0, 3).map(goal => {
-                const progress =
-                  goal.targetAmount > 0
-                    ? Math.min(goal.currentAmount / goal.targetAmount, 1)
-                    : 0;
-                const percent = Math.round(progress * 100);
-                return (
-                  <View
-                    key={goal.id}
-                    style={[
-                      tw`border rounded-2xl p-4 mb-4`,
-                      {
-                        backgroundColor: cardBgTertiary,
-                        borderColor: borderColorSecondary,
-                      },
-                    ]}
-                  >
-                    <View
-                      style={tw`flex-row justify-between items-center mb-3`}
-                    >
-                      <Text
-                        style={[tw`text-lg font-bold`, { color: theme.text }]}
-                      >
-                        {goal.name}
-                      </Text>
-                      <View style={[tw`flex-row items-center gap-3`]}>
-                        <View
-                          style={[
-                            tw`px-2 py-1 rounded-md min-w-12 items-center`,
-                            {
-                              backgroundColor: buttonBgSecondary,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              tw`text-xs font-semibold`,
-                              { color: theme.text },
-                            ]}
-                          >
-                            {percent}%
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          style={[
-                            tw`w-6 h-6 rounded-full items-center justify-center`,
-                            {
-                              backgroundColor: buttonBgSecondary,
-                            },
-                          ]}
-                          onPress={() => {
-                            setSelectedGoal(goal);
-                            setGoalModalVisible(true);
-                          }}
-                        >
-                          <Icon
-                            name="add"
-                            size={14}
-                            color={theme.textSecondary}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <View
-                      style={[tw`flex-row justify-between items-center mb-3`]}
-                    >
-                      <Text
-                        style={[
-                          tw`text-base font-semibold`,
-                          { color: theme.textSecondary },
-                        ]}
-                      >
-                        {formatCurrency(goal.currentAmount, settings.currency)}
-                      </Text>
-                      <Text
-                        style={[tw`text-xs`, { color: theme.textSecondary }]}
-                      >
-                        of{' '}
-                        {formatCurrency(goal.targetAmount, settings.currency)}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={[
-                        tw`h-2 rounded-sm`,
-                        {
-                          backgroundColor: buttonBgSecondary,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          tw`h-2 rounded-sm bg-[#3B82F6]`,
-                          { width: `${percent}%` },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-              {goals.length === 0 && (
-                <Text
-                  style={[
-                    tw`text-center p-2.5`,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  No savings goals yet.
-                </Text>
-              )}
-            </View>
+            {/* Savings Goals */}
+            <SavingsGoalsList
+              goals={goals}
+              theme={theme}
+              currencyCode={settings.currency}
+              onAddMoney={goal => {
+                setSelectedGoal(goal);
+                setGoalModalVisible(true);
+              }}
+            />
           </>
         )}
       </ScrollView>
 
-      {/* FAB - Only show if we have accounts, or maybe always? The empty state has a button. Let's hide FAB if empty state is evident to avoid clutter. */}
+      {/* FAB */}
       {accounts.length > 0 && (
         <TouchableOpacity
           style={[
