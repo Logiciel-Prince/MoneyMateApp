@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import tw from 'twrnc';
 import { Theme } from '../theme';
@@ -26,20 +26,26 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({
   const currentCurrency = currencies.find(c => c.code === selectedCurrency);
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.card }]}>
-      <Text style={[styles.cardTitle, { color: theme.text }]}>Currency</Text>
+    <View
+      style={[
+        tw`rounded-2xl mx-4 mb-4 p-4`,
+        {
+          backgroundColor: theme.card,
+        },
+      ]}
+    >
+      <Text style={[tw`text-lg font-bold mb-4`, { color: theme.text }]}>
+        Currency
+      </Text>
       <Text
-        style={[
-          styles.label,
-          { color: theme.textSecondary, marginBottom: 8 },
-        ]}
+        style={[tw`text-base font-medium mb-2`, { color: theme.textSecondary }]}
       >
         Display Currency
       </Text>
 
       <TouchableOpacity
         style={[
-          styles.pickerButton,
+          tw`flex-row justify-between items-center p-3 border rounded-lg`,
           { borderColor: theme.border, backgroundColor: theme.background },
         ]}
         onPress={onPress}
@@ -53,35 +59,5 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-});
-
 export default CurrencySelector;
+
