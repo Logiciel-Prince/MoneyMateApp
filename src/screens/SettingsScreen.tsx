@@ -19,6 +19,10 @@ import { lightTheme, darkTheme } from '../theme';
 import { CategoryType, Category } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import tw from 'twrnc';
+import ThemeSelector from '../components/ThemeSelector';
+import CurrencySelector from '../components/CurrencySelector';
+import CategoryManagerCard from '../components/CategoryManagerCard';
+import DataManagementCard from '../components/DataManagementCard';
 
 const SettingsScreen = ({ navigation }: any) => {
   const systemColorScheme = useColorScheme();
@@ -114,7 +118,6 @@ const SettingsScreen = ({ navigation }: any) => {
     }
 
     setIsImporting(true);
-    // Add small delay to allow UI to update
     setTimeout(async () => {
       const success = await importData(importText);
       setIsImporting(false);
@@ -140,7 +143,7 @@ const SettingsScreen = ({ navigation }: any) => {
       id: uuidv4(),
       name: newCatName.trim(),
       type: newCatType,
-      color: newCatType === CategoryType.INCOME ? '#10b981' : '#ef4444', // Default green/red
+      color: newCatType === CategoryType.INCOME ? '#10b981' : '#ef4444',
       icon:
         newCatType === CategoryType.INCOME
           ? 'cash-outline'
@@ -170,14 +173,7 @@ const SettingsScreen = ({ navigation }: any) => {
 
   const renderCategoryItem = ({ item }: { item: Category }) => (
     <View style={[styles.categoryItem, { borderBottomColor: theme.border }]}>
-      <View
-        style={[
-          tw`flex-row`,
-          tw`Center`,
-          tw`gap-2.5`,
-          tw`flex-1`,
-        ]}
-      >
+      <View style={[tw`flex-row`, tw`items-center`, tw`gap-2.5`, tw`flex-1`]}>
         <View style={[styles.catIcon, { backgroundColor: item.color + '20' }]}>
           <Icon name={item.icon} size={18} color={item.color} />
         </View>
@@ -227,253 +223,35 @@ const SettingsScreen = ({ navigation }: any) => {
         </Text>
       </View>
 
-      {/* Appearance */}
-      <View style={[styles.card, { backgroundColor: theme.card }]}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>
-          Appearance
-        </Text>
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>
-            Theme
-          </Text>
-          <View
-            style={[styles.themeToggle, { backgroundColor: theme.background }]}
-          >
-            <TouchableOpacity
-              style={[
-                styles.themeBtn,
-                settings.theme === 'light' && {
-                  backgroundColor: theme.card,
-                  elevation: 2,
-                },
-              ]}
-              onPress={() => toggleTheme('light')}
-            >
-              <Icon
-                name="sunny"
-                size={20}
-                color={
-                  settings.theme === 'light' ? '#FDB813' : theme.textSecondary
-                }
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeBtn,
-                settings.theme === 'system' && {
-                  backgroundColor: theme.card,
-                  elevation: 2,
-                },
-              ]}
-              onPress={() => toggleTheme('system')}
-            >
-              <Text
-                style={{
-                  color:
-                    settings.theme === 'system'
-                      ? theme.text
-                      : theme.textSecondary,
-                  fontWeight: '600',
-                  fontSize: 12,
-                }}
-              >
-                AUTO
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeBtn,
-                settings.theme === 'dark' && {
-                  backgroundColor: theme.card,
-                  elevation: 2,
-                },
-              ]}
-              onPress={() => toggleTheme('dark')}
-            >
-              <Icon
-                name="moon"
-                size={18}
-                color={settings.theme === 'dark' ? '#FFF' : theme.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      {/* Theme Selector */}
+      <ThemeSelector
+        currentTheme={settings.theme}
+        onThemeChange={toggleTheme}
+        theme={theme}
+      />
 
-      {/* Currency */}
-      <View style={[styles.card, { backgroundColor: theme.card }]}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Currency</Text>
-        <Text
-          style={[
-            styles.label,
-            { color: theme.textSecondary, marginBottom: 8 },
-          ]}
-        >
-          Display Currency
-        </Text>
+      {/* Currency Selector */}
+      <CurrencySelector
+        selectedCurrency={settings.currency}
+        currencies={currencies}
+        onPress={() => setCurrencyModalVisible(true)}
+        theme={theme}
+      />
 
-        <TouchableOpacity
-          style={[
-            styles.pickerButton,
-            { borderColor: theme.border, backgroundColor: theme.background },
-          ]}
-          onPress={() => setCurrencyModalVisible(true)}
-        >
-          <Text style={[tw`text-base`, { color: theme.text }]}>
-            {settings.currency} (
-            {currencies.find(c => c.code === settings.currency)?.symbol || '$'})
-          </Text>
-          <Icon name="chevron-down" size={20} color={theme.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Categories */}
-      <View style={[styles.card, { backgroundColor: theme.card }]}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>
-          Categories
-        </Text>
-        <View
-          style={[
-            styles.innerCard,
-            { backgroundColor: theme.background },
-            tw`opacity-80`,
-          ]}
-        >
-          <View style={styles.categoryInfo}>
-            <View style={[styles.iconBox, { backgroundColor: '#8b5cf6' }]}>
-              <Icon name="pricetag" size={24} color="#FFF" />
-            </View>
-            <View style={tw`flex-1`}>
-              <Text style={[styles.innerTitle, { color: theme.text }]}>
-                Manage Categories
-              </Text>
-              <Text
-                style={[{ color: theme.textSecondary }, tw`text-xs`]}
-              >
-                Edit existing categories or add new ones.
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={[styles.smallBtn, { borderColor: theme.border }]}
-            onPress={() => setCategoriesModalVisible(true)}
-          >
-            <Text
-              style={[{ color: theme.text }, tw`font-semibold`]}
-            >
-              Manage
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Category Manager */}
+      <CategoryManagerCard
+        onManagePress={() => setCategoriesModalVisible(true)}
+        theme={theme}
+      />
 
       {/* Data Management */}
-      <View style={[styles.card, { backgroundColor: theme.card }]}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>
-          Data Management
-        </Text>
-
-        {/* Load Demo */}
-        <View style={styles.dataRow}>
-          <View style={tw`flex-1`}>
-            <Text style={[styles.rowTitle, { color: theme.text }]}>
-              Load Demo Data
-            </Text>
-            <Text style={[styles.rowSub, { color: theme.textSecondary }]}>
-              Populate the app with sample data.
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: '#3b82f6' }]}
-            onPress={handleLoadDemoData}
-          >
-            <Text style={styles.actionBtnText}>Load Demo</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Import */}
-        <View style={styles.dataRow}>
-          <Icon
-            name="cloud-upload-outline"
-            size={24}
-            color={theme.textSecondary}
-            style={tw`mr-2.5`}
-          />
-          <View style={tw`flex-1`}>
-            <Text style={[styles.rowTitle, { color: theme.text }]}>
-              Import Data
-            </Text>
-            <Text style={[styles.rowSub, { color: theme.textSecondary }]}>
-              Restore from backup JSON.
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.outlineBtn, { borderColor: theme.border }]}
-            onPress={() => setImportModalVisible(true)}
-          >
-            <Text style={{ color: theme.text }}>Import</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Export */}
-        <View style={styles.dataRow}>
-          <Icon
-            name="cloud-download-outline"
-            size={24}
-            color={theme.textSecondary}
-            style={tw`mr-2.5`}
-          />
-          <View style={tw`flex-1`}>
-            <Text style={[styles.rowTitle, { color: theme.text }]}>
-              Export Data
-            </Text>
-            <Text style={[styles.rowSub, { color: theme.textSecondary }]}>
-              Download generic backup JSON.
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.outlineBtn, { borderColor: theme.border }]}
-            onPress={handleExportData}
-          >
-            <Text style={{ color: theme.text }}>Export</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Clear Data */}
-        <View
-          style={[
-            styles.dataRow,
-            {
-              borderBottomWidth: 0,
-              backgroundColor: 'rgba(239, 68, 68, 0.05)',
-              padding: 10,
-              borderRadius: 8,
-              marginTop: 10,
-            },
-          ]}
-        >
-          <Icon
-            name="trash-outline"
-            size={24}
-            color="#ef4444"
-            style={tw`mr-2.5`}
-          />
-          <View style={tw`flex-1`}>
-            <Text style={[styles.rowTitle, { color: '#ef4444' }]}>
-              Clear All Data
-            </Text>
-            <Text style={[styles.rowSub, { color: theme.textSecondary }]}>
-              Permanently remove all local data.
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}
-            onPress={handleClearData}
-          >
-            <Text style={styles.actionBtnText}>Clear Data</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <DataManagementCard
+        onLoadDemo={handleLoadDemoData}
+        onImport={() => setImportModalVisible(true)}
+        onExport={handleExportData}
+        onClearData={handleClearData}
+        theme={theme}
+      />
 
       <View style={styles.footer}>
         <Text style={[{ color: theme.textSecondary }, tw`text-xs`]}>
@@ -493,9 +271,7 @@ const SettingsScreen = ({ navigation }: any) => {
             <Text style={[styles.modalTitle, { color: theme.text }]}>
               Import Data
             </Text>
-            <Text
-              style={[{ color: theme.textSecondary }, tw`mb-2.5`]}
-            >
+            <Text style={[{ color: theme.textSecondary }, tw`mb-2.5`]}>
               Paste your backup JSON content below:
             </Text>
             <TextInput
@@ -575,9 +351,7 @@ const SettingsScreen = ({ navigation }: any) => {
                   setCurrencyModalVisible(false);
                 }}
               >
-                <Text
-                  style={[{ color: theme.text }, tw`text-base`]}
-                >
+                <Text style={[{ color: theme.text }, tw`text-base`]}>
                   {c.symbol} - {c.name} ({c.code})
                 </Text>
                 {settings.currency === c.code && (
@@ -627,21 +401,11 @@ const SettingsScreen = ({ navigation }: any) => {
             ]}
           >
             <Text
-              style={[
-                { color: theme.text },
-                tw`font-semibold`,
-                tw`mb-2.5`,
-              ]}
+              style={[{ color: theme.text }, tw`font-semibold`, tw`mb-2.5`]}
             >
               Add New Category
             </Text>
-            <View
-              style={[
-                tw`flex-row`,
-                tw`gap-2.5`,
-                tw`mb-2.5`,
-              ]}
-            >
+            <View style={[tw`flex-row`, tw`gap-2.5`, tw`mb-2.5`]}>
               <TouchableOpacity
                 style={[
                   styles.typeBtn,
@@ -728,120 +492,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
-  card: {
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  themeToggle: {
-    flexDirection: 'row',
-    padding: 3,
-    borderRadius: 20,
-    gap: 2,
-  },
-  themeBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 40,
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-  innerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 12,
-    gap: 10,
-  },
-  categoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  innerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  smallBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFFFFF10', // subtle
-    gap: 8,
-  },
-  rowTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  rowSub: {
-    fontSize: 12,
-  },
-  actionBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  actionBtnText: {
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  outlineBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
   footer: {
     alignItems: 'center',
     paddingVertical: 20,
   },
-  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -888,7 +542,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: 1,
   },
-  // Full screen modal
   fullScreenModal: {
     flex: 1,
   },
@@ -932,6 +585,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#888',
+  },
+  actionBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
 });
 
