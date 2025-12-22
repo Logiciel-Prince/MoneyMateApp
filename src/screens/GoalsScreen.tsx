@@ -10,20 +10,32 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useData } from '../context/DataContext';
 import { lightTheme, darkTheme } from '../theme';
-import { Goal } from '../types';
+import { Goal, Transaction } from '../types';
 import AddGoalModal from '../components/AddGoalModal';
+import AddGoalContributionModal from '../components/AddGoalContributionModal';
 import GoalCard from '../components/GoalCard';
 import EmptyGoalList from '../components/EmptyGoalList';
 
 const GoalsScreen = () => {
   const systemColorScheme = useColorScheme();
-  const { goals, addGoal, updateGoal, deleteGoal, settings } = useData();
+  const {
+    goals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    settings,
+    accounts,
+    updateAccount,
+    addTransaction,
+  } = useData();
   const activeThemeType =
     settings.theme === 'system' ? systemColorScheme : settings.theme;
   const theme = activeThemeType === 'dark' ? darkTheme : lightTheme;
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
+  const [addFundsModalVisible, setAddFundsModalVisible] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
   const handleAddGoal = (goalData: Omit<Goal, 'id'>) => {
     if (editingGoal) {
@@ -55,27 +67,42 @@ const GoalsScreen = () => {
   };
 
   const handleAddFunds = (goal: Goal) => {
-    Alert.prompt(
-      'Add Funds',
-      `How much would you like to add to "${goal.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Add',
-          onPress: amount => {
-            const addAmount = parseFloat(amount || '0');
-            if (addAmount > 0) {
-              updateGoal(goal.id, {
-                currentAmount: goal.currentAmount + addAmount,
-              });
-            }
-          },
-        },
-      ],
-      'plain-text',
-      '',
-      'decimal-pad',
-    );
+    setSelectedGoal(goal);
+    setAddFundsModalVisible(true);
+  };
+
+  const handleSaveContribution = (
+    goalId: string,
+    amount: number,
+    accountId?: string,
+  ) => {
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    // Update goal amount
+    updateGoal(goalId, { currentAmount: goal.currentAmount + amount });
+
+    // If account is selected, deduct from account and create transaction
+    if (accountId) {
+      const account = accounts.find(a => a.id === accountId);
+      if (account) {
+        updateAccount(accountId, { balance: account.balance - amount });
+
+        const newTransaction: Transaction = {
+          id: Date.now().toString(),
+          type: 'expense',
+          amount: amount,
+          category: 'Savings',
+          description: `Contribution to ${goal.name}`,
+          date: new Date().toISOString().split('T')[0],
+          accountId: accountId,
+        };
+        addTransaction(newTransaction);
+      }
+    }
+
+    setAddFundsModalVisible(false);
+    setSelectedGoal(null);
   };
 
   return (
@@ -108,7 +135,7 @@ const GoalsScreen = () => {
         <Icon name="add" size={28} color="#FFF" />
       </TouchableOpacity>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Goal Modal */}
       <AddGoalModal
         visible={modalVisible}
         onClose={() => {
@@ -117,6 +144,18 @@ const GoalsScreen = () => {
         }}
         onSave={handleAddGoal}
         editGoal={editingGoal}
+      />
+
+      {/* Add Funds Modal */}
+      <AddGoalContributionModal
+        visible={addFundsModalVisible}
+        onClose={() => {
+          setAddFundsModalVisible(false);
+          setSelectedGoal(null);
+        }}
+        onSave={handleSaveContribution}
+        goal={selectedGoal}
+        accounts={accounts}
       />
     </View>
   );
@@ -148,3 +187,4 @@ const styles = StyleSheet.create({
 });
 
 export default GoalsScreen;
+

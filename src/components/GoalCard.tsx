@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Theme } from '../theme';
 import { Goal } from '../types';
@@ -28,28 +28,6 @@ const GoalCard: React.FC<GoalCardProps> = ({
     (new Date(goal.deadline).getTime() - new Date().getTime()) /
       (1000 * 60 * 60 * 24),
   );
-
-  const handleAddFunds = () => {
-    Alert.prompt(
-      'Add Funds',
-      `How much would you like to add to "${goal.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Add',
-          onPress: amount => {
-            const addAmount = parseFloat(amount || '0');
-            if (addAmount > 0) {
-              onAddFunds(goal);
-            }
-          },
-        },
-      ],
-      'plain-text',
-      '',
-      'decimal-pad',
-    );
-  };
 
   return (
     <TouchableOpacity
@@ -116,7 +94,7 @@ const GoalCard: React.FC<GoalCardProps> = ({
       {!isComplete && (
         <TouchableOpacity
           style={[styles.addFundsButton, { backgroundColor: theme.primary }]}
-          onPress={handleAddFunds}
+          onPress={() => onAddFunds(goal)}
         >
           <Icon name="add-circle-outline" size={20} color="#FFF" />
           <Text style={styles.addFundsText}>Add Funds</Text>
