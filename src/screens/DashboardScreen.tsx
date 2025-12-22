@@ -17,6 +17,7 @@ import IncomeExpenseStats from '../components/IncomeExpenseStats';
 import IncomeExpenseChart from '../components/IncomeExpenseChart';
 import ExpenseBreakdownChart from '../components/ExpenseBreakdownChart';
 import SavingsGoalsList from '../components/SavingsGoalsList';
+import AnimatedScreenWrapper from '../components/AnimatedScreenWrapper';
 import tw from 'twrnc';
 
 const DashboardScreen = ({ navigation }: any) => {
@@ -129,153 +130,158 @@ const DashboardScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={[tw`flex-1`, { backgroundColor: theme.background }]}>
-      <ScrollView
-        style={[tw`flex-1`, { backgroundColor: theme.background }]}
-        contentContainerStyle={tw`pb-25`}
-      >
-        {/* Dashboard Title Header */}
-        <View style={tw`px-5 pt-2.5 pb-5`}>
-          <View>
-            <Text style={[tw`text-3xl font-bold`, { color: theme.text }]}>
-              Dashboard
-            </Text>
-            <Text style={[tw`text-sm mt-1`, { color: theme.textSecondary }]}>
-              Welcome back, here's your financial overview.
-            </Text>
+      <AnimatedScreenWrapper>
+        <ScrollView
+          style={[tw`flex-1`, { backgroundColor: theme.background }]}
+          contentContainerStyle={tw`pb-25`}
+        >
+          {/* Dashboard Title Header */}
+          <View style={tw`px-5 pt-2.5 pb-5`}>
+            <View>
+              <Text style={[tw`text-3xl font-bold`, { color: theme.text }]}>
+                Dashboard
+              </Text>
+              <Text style={[tw`text-sm mt-1`, { color: theme.textSecondary }]}>
+                Welcome back, here's your financial overview.
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {accounts.length === 0 ? (
-          <View
-            style={[
-              tw`m-5 p-7.5 border-2 border-dashed rounded-2xl items-center justify-center`,
-              { borderColor: theme.border },
-            ]}
-          >
+          {accounts.length === 0 ? (
             <View
               style={[
-                tw`w-20 h-20 rounded-full justify-center items-center mb-5`,
-                { backgroundColor: `${theme.primary}20` },
+                tw`m-5 p-7.5 border-2 border-dashed rounded-2xl items-center justify-center`,
+                { borderColor: theme.border },
               ]}
             >
-              <Icon name="grid-outline" size={40} color={theme.primary} />
+              <View
+                style={[
+                  tw`w-20 h-20 rounded-full justify-center items-center mb-5`,
+                  { backgroundColor: `${theme.primary}20` },
+                ]}
+              >
+                <Icon name="grid-outline" size={40} color={theme.primary} />
+              </View>
+              <Text
+                style={[
+                  tw`text-2xl font-bold mb-2.5 text-center`,
+                  { color: theme.text },
+                ]}
+              >
+                Welcome to MoneyMate
+              </Text>
+              <Text
+                style={[
+                  tw`text-base text-center leading-6 mb-7.5 px-2.5`,
+                  { color: theme.textSecondary },
+                ]}
+              >
+                Your personal finance dashboard is currently empty. Get started
+                by adding your accounts, or load demo data to explore the
+                features.
+              </Text>
+
+              <TouchableOpacity
+                style={[
+                  tw`flex-row items-center justify-center py-3 px-6 rounded-xl mb-4 w-full gap-2`,
+                  { backgroundColor: theme.primary },
+                ]}
+                onPress={() => navigation.navigate('Accounts')}
+              >
+                <Icon name="add" size={20} color="#FFF" />
+                <Text style={tw`text-white text-base font-semibold`}>
+                  Add Your First Account
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  tw`items-center justify-center py-3 px-6 rounded-xl border w-full`,
+                  { borderColor: theme.border, backgroundColor: theme.card },
+                ]}
+                onPress={() => navigation.navigate('Settings')}
+              >
+                <Text
+                  style={[tw`text-base font-medium`, { color: theme.text }]}
+                >
+                  Go to Settings for Demo Data
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text
-              style={[
-                tw`text-2xl font-bold mb-2.5 text-center`,
-                { color: theme.text },
-              ]}
-            >
-              Welcome to MoneyMate
-            </Text>
-            <Text
-              style={[
-                tw`text-base text-center leading-6 mb-7.5 px-2.5`,
-                { color: theme.textSecondary },
-              ]}
-            >
-              Your personal finance dashboard is currently empty. Get started by
-              adding your accounts, or load demo data to explore the features.
-            </Text>
+          ) : (
+            <>
+              {/* Income & Expense Stats */}
+              <IncomeExpenseStats
+                totalBalance={totalBalance}
+                monthlyIncome={monthlyIncome}
+                monthlyExpense={monthlyExpense}
+                incomeChange={incomeChange}
+                expenseChange={expenseChange}
+                theme={theme}
+                currencyCode={settings.currency}
+              />
 
-            <TouchableOpacity
-              style={[
-                tw`flex-row items-center justify-center py-3 px-6 rounded-xl mb-4 w-full gap-2`,
-                { backgroundColor: theme.primary },
-              ]}
-              onPress={() => navigation.navigate('Accounts')}
-            >
-              <Icon name="add" size={20} color="#FFF" />
-              <Text style={tw`text-white text-base font-semibold`}>
-                Add Your First Account
-              </Text>
-            </TouchableOpacity>
+              {/* Income & Expense Chart */}
+              <IncomeExpenseChart
+                transactions={transactions}
+                theme={theme}
+                currencyCode={settings.currency}
+              />
 
-            <TouchableOpacity
-              style={[
-                tw`items-center justify-center py-3 px-6 rounded-xl border w-full`,
-                { borderColor: theme.border, backgroundColor: theme.card },
-              ]}
-              onPress={() => navigation.navigate('Settings')}
-            >
-              <Text style={[tw`text-base font-medium`, { color: theme.text }]}>
-                Go to Settings for Demo Data
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            {/* Income & Expense Stats */}
-            <IncomeExpenseStats
-              totalBalance={totalBalance}
-              monthlyIncome={monthlyIncome}
-              monthlyExpense={monthlyExpense}
-              incomeChange={incomeChange}
-              expenseChange={expenseChange}
-              theme={theme}
-              currencyCode={settings.currency}
-            />
+              {/* Expense Breakdown */}
+              <ExpenseBreakdownChart
+                transactions={transactions}
+                theme={theme}
+                currencyCode={settings.currency}
+              />
 
-            {/* Income & Expense Chart */}
-            <IncomeExpenseChart
-              transactions={transactions}
-              theme={theme}
-              currencyCode={settings.currency}
-            />
+              {/* Savings Goals */}
+              <SavingsGoalsList
+                goals={goals}
+                theme={theme}
+                currencyCode={settings.currency}
+                onAddMoney={goal => {
+                  setSelectedGoal(goal);
+                  setGoalModalVisible(true);
+                }}
+              />
+            </>
+          )}
+        </ScrollView>
 
-            {/* Expense Breakdown */}
-            <ExpenseBreakdownChart
-              transactions={transactions}
-              theme={theme}
-              currencyCode={settings.currency}
-            />
-
-            {/* Savings Goals */}
-            <SavingsGoalsList
-              goals={goals}
-              theme={theme}
-              currencyCode={settings.currency}
-              onAddMoney={goal => {
-                setSelectedGoal(goal);
-                setGoalModalVisible(true);
-              }}
-            />
-          </>
+        {/* FAB */}
+        {accounts.length > 0 && (
+          <TouchableOpacity
+            style={[
+              tw`absolute right-5 bottom-7 w-15 h-15 rounded-full justify-center items-center shadow-lg`,
+              {
+                backgroundColor: theme.primary,
+                shadowColor: theme.primary,
+              },
+            ]}
+            onPress={() => setModalVisible(true)}
+          >
+            <Icon name="add" size={32} color="#FFF" />
+          </TouchableOpacity>
         )}
-      </ScrollView>
 
-      {/* FAB */}
-      {accounts.length > 0 && (
-        <TouchableOpacity
-          style={[
-            tw`absolute right-5 bottom-7 w-15 h-15 rounded-full justify-center items-center shadow-lg`,
-            {
-              backgroundColor: theme.primary,
-              shadowColor: theme.primary,
-            },
-          ]}
-          onPress={() => setModalVisible(true)}
-        >
-          <Icon name="add" size={32} color="#FFF" />
-        </TouchableOpacity>
-      )}
+        {/* Add Transaction Modal */}
+        <AddTransactionModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSaveTransaction}
+          accounts={accounts}
+        />
 
-      {/* Add Transaction Modal */}
-      <AddTransactionModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSaveTransaction}
-        accounts={accounts}
-      />
-
-      {/* Add Money to Goal Modal */}
-      <AddGoalContributionModal
-        visible={goalModalVisible}
-        onClose={() => setGoalModalVisible(false)}
-        onSave={handleAddMoneyToGoal}
-        goal={selectedGoal}
-        accounts={accounts}
-      />
+        {/* Add Money to Goal Modal */}
+        <AddGoalContributionModal
+          visible={goalModalVisible}
+          onClose={() => setGoalModalVisible(false)}
+          onSave={handleAddMoneyToGoal}
+          goal={selectedGoal}
+          accounts={accounts}
+        />
+      </AnimatedScreenWrapper>
     </SafeAreaView>
   );
 };

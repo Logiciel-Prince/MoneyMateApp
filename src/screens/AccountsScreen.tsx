@@ -16,6 +16,7 @@ import AddTransactionModal from '../components/AddTransactionModal';
 import TotalBalanceCard from '../components/TotalBalanceCard';
 import AccountCard from '../components/AccountCard';
 import EmptyAccountList from '../components/EmptyAccountList';
+import AnimatedScreenWrapper from '../components/AnimatedScreenWrapper';
 
 const AccountsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -93,67 +94,69 @@ const AccountsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Total Balance Card */}
-      {accounts.length > 0 && (
-        <TotalBalanceCard
-          totalBalance={totalBalance}
-          accountCount={accounts.length}
-          currencyCode={settings.currency}
-          theme={theme}
-        />
-      )}
-
-      <FlatList
-        data={accounts}
-        renderItem={({ item }) => (
-          <AccountCard
-            account={item}
-            theme={theme}
+      <AnimatedScreenWrapper>
+        {/* Total Balance Card */}
+        {accounts.length > 0 && (
+          <TotalBalanceCard
+            totalBalance={totalBalance}
+            accountCount={accounts.length}
             currencyCode={settings.currency}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAddMoney={handleAddBalance}
+            theme={theme}
           />
         )}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyAccountList theme={theme} />}
-      />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
-        onPress={() => {
-          setEditingAccount(undefined);
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
+        <FlatList
+          data={accounts}
+          renderItem={({ item }) => (
+            <AccountCard
+              account={item}
+              theme={theme}
+              currencyCode={settings.currency}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAddMoney={handleAddBalance}
+            />
+          )}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<EmptyAccountList theme={theme} />}
+        />
 
-      {/* Add/Edit Modal */}
-      <AddAccountModal
-        visible={modalVisible}
-        onClose={() => {
-          setModalVisible(false);
-          setEditingAccount(undefined);
-        }}
-        onSave={handleAddAccount}
-        editAccount={editingAccount}
-      />
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.primary }]}
+          onPress={() => {
+            setEditingAccount(undefined);
+            setModalVisible(true);
+          }}
+        >
+          <Icon name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
 
-      {/* Add Balance Modal */}
-      <AddTransactionModal
-        visible={addTransactionVisible}
-        onClose={() => {
-          setAddTransactionVisible(false);
-          setSelectedAccountForBalance(undefined);
-        }}
-        onSave={handleSaveTransaction}
-        accounts={accounts}
-        initialType="income"
-        initialAccountId={selectedAccountForBalance?.id}
-      />
+        {/* Add/Edit Modal */}
+        <AddAccountModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setEditingAccount(undefined);
+          }}
+          onSave={handleAddAccount}
+          editAccount={editingAccount}
+        />
+
+        {/* Add Balance Modal */}
+        <AddTransactionModal
+          visible={addTransactionVisible}
+          onClose={() => {
+            setAddTransactionVisible(false);
+            setSelectedAccountForBalance(undefined);
+          }}
+          onSave={handleSaveTransaction}
+          accounts={accounts}
+          initialType="income"
+          initialAccountId={selectedAccountForBalance?.id}
+        />
+      </AnimatedScreenWrapper>
     </View>
   );
 };

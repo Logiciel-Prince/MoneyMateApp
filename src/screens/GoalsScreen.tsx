@@ -15,6 +15,7 @@ import AddGoalModal from '../components/AddGoalModal';
 import AddGoalContributionModal from '../components/AddGoalContributionModal';
 import GoalCard from '../components/GoalCard';
 import EmptyGoalList from '../components/EmptyGoalList';
+import AnimatedScreenWrapper from '../components/AnimatedScreenWrapper';
 
 const GoalsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -107,56 +108,58 @@ const GoalsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <FlatList
-        data={goals}
-        renderItem={({ item }) => (
-          <GoalCard
-            goal={item}
-            theme={theme}
-            currencyCode={settings.currency}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAddFunds={handleAddFunds}
-          />
-        )}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyGoalList theme={theme} />}
-      />
+      <AnimatedScreenWrapper>
+        <FlatList
+          data={goals}
+          renderItem={({ item }) => (
+            <GoalCard
+              goal={item}
+              theme={theme}
+              currencyCode={settings.currency}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAddFunds={handleAddFunds}
+            />
+          )}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<EmptyGoalList theme={theme} />}
+        />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
-        onPress={() => {
-          setEditingGoal(undefined);
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.primary }]}
+          onPress={() => {
+            setEditingGoal(undefined);
+            setModalVisible(true);
+          }}
+        >
+          <Icon name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
 
-      {/* Add/Edit Goal Modal */}
-      <AddGoalModal
-        visible={modalVisible}
-        onClose={() => {
-          setModalVisible(false);
-          setEditingGoal(undefined);
-        }}
-        onSave={handleAddGoal}
-        editGoal={editingGoal}
-      />
+        {/* Add/Edit Goal Modal */}
+        <AddGoalModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setEditingGoal(undefined);
+          }}
+          onSave={handleAddGoal}
+          editGoal={editingGoal}
+        />
 
-      {/* Add Funds Modal */}
-      <AddGoalContributionModal
-        visible={addFundsModalVisible}
-        onClose={() => {
-          setAddFundsModalVisible(false);
-          setSelectedGoal(null);
-        }}
-        onSave={handleSaveContribution}
-        goal={selectedGoal}
-        accounts={accounts}
-      />
+        {/* Add Funds Modal */}
+        <AddGoalContributionModal
+          visible={addFundsModalVisible}
+          onClose={() => {
+            setAddFundsModalVisible(false);
+            setSelectedGoal(null);
+          }}
+          onSave={handleSaveContribution}
+          goal={selectedGoal}
+          accounts={accounts}
+        />
+      </AnimatedScreenWrapper>
     </View>
   );
 };

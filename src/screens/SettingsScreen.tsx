@@ -22,6 +22,7 @@ import ThemeSelector from '../components/ThemeSelector';
 import CurrencySelector from '../components/CurrencySelector';
 import CategoryManagerCard from '../components/CategoryManagerCard';
 import DataManagementCard from '../components/DataManagementCard';
+import AnimatedScreenWrapper from '../components/AnimatedScreenWrapper';
 
 const SettingsScreen = ({ navigation }: any) => {
   const systemColorScheme = useColorScheme();
@@ -226,271 +227,279 @@ const SettingsScreen = ({ navigation }: any) => {
       style={[tw`flex-1`, { backgroundColor: theme.background }]}
       contentContainerStyle={tw`pb-10`}
     >
-      <View style={tw`p-5 pt-2.5`}>
-        <Text style={[tw`text-3xl font-bold`, { color: theme.text }]}>
-          Settings
-        </Text>
-      </View>
-
-      {/* Theme Selector */}
-      <ThemeSelector
-        currentTheme={settings.theme}
-        onThemeChange={toggleTheme}
-        theme={theme}
-      />
-
-      {/* Currency Selector */}
-      <CurrencySelector
-        selectedCurrency={settings.currency}
-        currencies={currencies}
-        onPress={() => setCurrencyModalVisible(true)}
-        theme={theme}
-      />
-
-      {/* Category Manager */}
-      <CategoryManagerCard
-        onManagePress={() => setCategoriesModalVisible(true)}
-        theme={theme}
-      />
-
-      {/* Data Management */}
-      <DataManagementCard
-        onLoadDemo={handleLoadDemoData}
-        onImport={() => setImportModalVisible(true)}
-        onExport={handleExportData}
-        onClearData={handleClearData}
-        theme={theme}
-      />
-
-      <View style={tw`items-center py-5`}>
-        <Text style={[tw`text-xs`, { color: theme.textSecondary }]}>
-          MoneyMate v1.0.0 • Local Storage Persistence
-        </Text>
-      </View>
-
-      {/* Import Modal */}
-      <Modal
-        visible={importModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setImportModalVisible(false)}
-      >
-        <View
-          style={tw`flex-1 bg-[rgba(0,0,0,0.5)] justify-center items-center`}
-        >
-          <View
-            style={[
-              tw`w-[90%] p-5 rounded-2xl`,
-              { backgroundColor: theme.card },
-            ]}
-          >
-            <Text style={[tw`text-xl font-bold mb-4`, { color: theme.text }]}>
-              Import Data
-            </Text>
-            <Text style={[{ color: theme.textSecondary }, tw`mb-2.5`]}>
-              Paste your backup JSON content below:
-            </Text>
-            <TextInput
-              style={[
-                tw`h-[150px] border rounded-lg p-2.5 text-xs mb-4 align-top`,
-                {
-                  backgroundColor: theme.background,
-                  color: theme.text,
-                  borderColor: theme.border,
-                },
-              ]}
-              multiline
-              value={importText}
-              onChangeText={setImportText}
-              placeholder="{ ... }"
-              placeholderTextColor={theme.textSecondary}
-            />
-            <View style={tw`flex-row justify-end gap-3`}>
-              <TouchableOpacity
-                style={[
-                  tw`px-5 py-2.5 rounded-lg border min-w-[80px] items-center`,
-                  { borderColor: theme.border },
-                ]}
-                onPress={() => setImportModalVisible(false)}
-              >
-                <Text style={{ color: theme.text }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  tw`px-5 py-2.5 rounded-lg border min-w-[80px] items-center`,
-                  {
-                    backgroundColor: theme.primary,
-                    borderColor: theme.primary,
-                  },
-                ]}
-                onPress={handleImportData}
-                disabled={isImporting}
-              >
-                {isImporting ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={tw`text-white`}>Import</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+      <AnimatedScreenWrapper>
+        <View style={tw`p-5 pt-2.5`}>
+          <Text style={[tw`text-3xl font-bold`, { color: theme.text }]}>
+            Settings
+          </Text>
         </View>
-      </Modal>
 
-      {/* Currency Modal */}
-      <Modal
-        visible={currencyModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCurrencyModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={tw`flex-1 bg-[rgba(0,0,0,0.5)] justify-center items-center`}
-          onPress={() => setCurrencyModalVisible(false)}
-          activeOpacity={1}
+        {/* Theme Selector */}
+        <ThemeSelector
+          currentTheme={settings.theme}
+          onThemeChange={toggleTheme}
+          theme={theme}
+        />
+
+        {/* Currency Selector */}
+        <CurrencySelector
+          selectedCurrency={settings.currency}
+          currencies={currencies}
+          onPress={() => setCurrencyModalVisible(true)}
+          theme={theme}
+        />
+
+        {/* Category Manager */}
+        <CategoryManagerCard
+          onManagePress={() => setCategoriesModalVisible(true)}
+          theme={theme}
+        />
+
+        {/* Data Management */}
+        <DataManagementCard
+          onLoadDemo={handleLoadDemoData}
+          onImport={() => setImportModalVisible(true)}
+          onExport={handleExportData}
+          onClearData={handleClearData}
+          theme={theme}
+        />
+
+        <View style={tw`items-center py-5`}>
+          <Text style={[tw`text-xs`, { color: theme.textSecondary }]}>
+            MoneyMate v1.0.0 • Local Storage Persistence
+          </Text>
+        </View>
+
+        {/* Import Modal */}
+        <Modal
+          visible={importModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setImportModalVisible(false)}
         >
           <View
-            style={[
-              tw`w-[80%] p-5 rounded-2xl`,
-              { backgroundColor: theme.card },
-            ]}
+            style={tw`flex-1 bg-[rgba(0,0,0,0.5)] justify-center items-center`}
           >
-            <Text style={[tw`text-xl font-bold mb-4`, { color: theme.text }]}>
-              Select Currency
-            </Text>
-            {currencies.map(c => (
-              <TouchableOpacity
-                key={c.code}
-                style={[
-                  tw`py-4 flex-row justify-between border-b`,
-                  { borderBottomColor: theme.border },
-                ]}
-                onPress={() => {
-                  updateSettings({ currency: c.code });
-                  setCurrencyModalVisible(false);
-                }}
-              >
-                <Text style={[{ color: theme.text }, tw`text-base`]}>
-                  {c.symbol} - {c.name} ({c.code})
-                </Text>
-                {settings.currency === c.code && (
-                  <Icon name="checkmark" size={20} color={theme.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Manage Categories Modal */}
-      <Modal
-        visible={categoriesModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setCategoriesModalVisible(false)}
-      >
-        <View style={[tw`flex-1`, { backgroundColor: theme.background }]}>
-          <View
-            style={[
-              tw`flex-row justify-between items-center p-5 border-b`,
-              { borderBottomColor: theme.border },
-            ]}
-          >
-            <Text style={[tw`text-xl font-bold`, { color: theme.text }]}>
-              Manage Categories
-            </Text>
-            <TouchableOpacity onPress={() => setCategoriesModalVisible(false)}>
-              <Icon name="close" size={28} color={theme.text} />
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            data={categories}
-            keyExtractor={item => item.id}
-            renderItem={renderCategoryItem}
-            contentContainerStyle={tw`p-5 pb-25`}
-          />
-
-          <View
-            style={[
-              tw`p-5 border-t`,
-              {
-                backgroundColor: theme.card,
-                borderTopColor: theme.border,
-              },
-            ]}
-          >
-            <Text
-              style={[{ color: theme.text }, tw`font-semibold`, tw`mb-2.5`]}
+            <View
+              style={[
+                tw`w-[90%] p-5 rounded-2xl`,
+                { backgroundColor: theme.card },
+              ]}
             >
-              Add New Category
-            </Text>
-            <View style={tw`flex-row gap-2.5 mb-2.5`}>
-              <TouchableOpacity
-                style={[
-                  tw`py-2 px-4 rounded-full border`,
-                  newCatType === CategoryType.EXPENSE
-                    ? tw`bg-[#ef4444] border-[#ef4444]`
-                    : tw`border-[#888]`,
-                ]}
-                onPress={() => setNewCatType(CategoryType.EXPENSE)}
-              >
-                <Text
-                  style={{
-                    color:
-                      newCatType === CategoryType.EXPENSE ? '#FFF' : theme.text,
-                  }}
-                >
-                  Expense
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  tw`py-2 px-4 rounded-full border`,
-                  newCatType === CategoryType.INCOME
-                    ? tw`bg-[#10b981] border-[#10b981]`
-                    : tw`border-[#888]`,
-                ]}
-                onPress={() => setNewCatType(CategoryType.INCOME)}
-              >
-                <Text
-                  style={{
-                    color:
-                      newCatType === CategoryType.INCOME ? '#FFF' : theme.text,
-                  }}
-                >
-                  Income
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View style={tw`flex-row gap-2.5`}>
+              <Text style={[tw`text-xl font-bold mb-4`, { color: theme.text }]}>
+                Import Data
+              </Text>
+              <Text style={[{ color: theme.textSecondary }, tw`mb-2.5`]}>
+                Paste your backup JSON content below:
+              </Text>
               <TextInput
                 style={[
-                  tw`flex-1 h-[45px] border rounded-lg p-2.5`,
+                  tw`h-[150px] border rounded-lg p-2.5 text-xs mb-4 align-top`,
                   {
                     backgroundColor: theme.background,
                     color: theme.text,
                     borderColor: theme.border,
                   },
                 ]}
-                placeholder="Category Name"
+                multiline
+                value={importText}
+                onChangeText={setImportText}
+                placeholder="{ ... }"
                 placeholderTextColor={theme.textSecondary}
-                value={newCatName}
-                onChangeText={setNewCatName}
               />
-              <TouchableOpacity
-                style={[
-                  tw`px-4 py-2 rounded-lg justify-center`,
-                  { backgroundColor: theme.primary },
-                ]}
-                onPress={handleAddCategory}
-              >
-                <Icon name="add" size={24} color="#FFF" />
-              </TouchableOpacity>
+              <View style={tw`flex-row justify-end gap-3`}>
+                <TouchableOpacity
+                  style={[
+                    tw`px-5 py-2.5 rounded-lg border min-w-[80px] items-center`,
+                    { borderColor: theme.border },
+                  ]}
+                  onPress={() => setImportModalVisible(false)}
+                >
+                  <Text style={{ color: theme.text }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    tw`px-5 py-2.5 rounded-lg border min-w-[80px] items-center`,
+                    {
+                      backgroundColor: theme.primary,
+                      borderColor: theme.primary,
+                    },
+                  ]}
+                  onPress={handleImportData}
+                  disabled={isImporting}
+                >
+                  {isImporting ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={tw`text-white`}>Import</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+
+        {/* Currency Modal */}
+        <Modal
+          visible={currencyModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCurrencyModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={tw`flex-1 bg-[rgba(0,0,0,0.5)] justify-center items-center`}
+            onPress={() => setCurrencyModalVisible(false)}
+            activeOpacity={1}
+          >
+            <View
+              style={[
+                tw`w-[80%] p-5 rounded-2xl`,
+                { backgroundColor: theme.card },
+              ]}
+            >
+              <Text style={[tw`text-xl font-bold mb-4`, { color: theme.text }]}>
+                Select Currency
+              </Text>
+              {currencies.map(c => (
+                <TouchableOpacity
+                  key={c.code}
+                  style={[
+                    tw`py-4 flex-row justify-between border-b`,
+                    { borderBottomColor: theme.border },
+                  ]}
+                  onPress={() => {
+                    updateSettings({ currency: c.code });
+                    setCurrencyModalVisible(false);
+                  }}
+                >
+                  <Text style={[{ color: theme.text }, tw`text-base`]}>
+                    {c.symbol} - {c.name} ({c.code})
+                  </Text>
+                  {settings.currency === c.code && (
+                    <Icon name="checkmark" size={20} color={theme.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Manage Categories Modal */}
+        <Modal
+          visible={categoriesModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setCategoriesModalVisible(false)}
+        >
+          <View style={[tw`flex-1`, { backgroundColor: theme.background }]}>
+            <View
+              style={[
+                tw`flex-row justify-between items-center p-5 border-b`,
+                { borderBottomColor: theme.border },
+              ]}
+            >
+              <Text style={[tw`text-xl font-bold`, { color: theme.text }]}>
+                Manage Categories
+              </Text>
+              <TouchableOpacity
+                onPress={() => setCategoriesModalVisible(false)}
+              >
+                <Icon name="close" size={28} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={categories}
+              keyExtractor={item => item.id}
+              renderItem={renderCategoryItem}
+              contentContainerStyle={tw`p-5 pb-25`}
+            />
+
+            <View
+              style={[
+                tw`p-5 border-t`,
+                {
+                  backgroundColor: theme.card,
+                  borderTopColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[{ color: theme.text }, tw`font-semibold`, tw`mb-2.5`]}
+              >
+                Add New Category
+              </Text>
+              <View style={tw`flex-row gap-2.5 mb-2.5`}>
+                <TouchableOpacity
+                  style={[
+                    tw`py-2 px-4 rounded-full border`,
+                    newCatType === CategoryType.EXPENSE
+                      ? tw`bg-[#ef4444] border-[#ef4444]`
+                      : tw`border-[#888]`,
+                  ]}
+                  onPress={() => setNewCatType(CategoryType.EXPENSE)}
+                >
+                  <Text
+                    style={{
+                      color:
+                        newCatType === CategoryType.EXPENSE
+                          ? '#FFF'
+                          : theme.text,
+                    }}
+                  >
+                    Expense
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    tw`py-2 px-4 rounded-full border`,
+                    newCatType === CategoryType.INCOME
+                      ? tw`bg-[#10b981] border-[#10b981]`
+                      : tw`border-[#888]`,
+                  ]}
+                  onPress={() => setNewCatType(CategoryType.INCOME)}
+                >
+                  <Text
+                    style={{
+                      color:
+                        newCatType === CategoryType.INCOME
+                          ? '#FFF'
+                          : theme.text,
+                    }}
+                  >
+                    Income
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={tw`flex-row gap-2.5`}>
+                <TextInput
+                  style={[
+                    tw`flex-1 h-[45px] border rounded-lg p-2.5`,
+                    {
+                      backgroundColor: theme.background,
+                      color: theme.text,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  placeholder="Category Name"
+                  placeholderTextColor={theme.textSecondary}
+                  value={newCatName}
+                  onChangeText={setNewCatName}
+                />
+                <TouchableOpacity
+                  style={[
+                    tw`px-4 py-2 rounded-lg justify-center`,
+                    { backgroundColor: theme.primary },
+                  ]}
+                  onPress={handleAddCategory}
+                >
+                  <Icon name="add" size={24} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </AnimatedScreenWrapper>
     </ScrollView>
   );
 };

@@ -16,6 +16,7 @@ import SearchBar from '../components/SearchBar';
 import TransactionItem from '../components/TransactionItem';
 import TransactionSectionHeader from '../components/TransactionSectionHeader';
 import EmptyTransactionList from '../components/EmptyTransactionList';
+import AnimatedScreenWrapper from '../components/AnimatedScreenWrapper';
 
 const TransactionsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -127,68 +128,70 @@ const TransactionsScreen = () => {
 
   return (
     <View style={[tw`flex-1`, { backgroundColor: theme.background }]}>
-      <SearchBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        theme={theme}
-      />
+      <AnimatedScreenWrapper>
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          theme={theme}
+        />
 
-      <SectionList
-        sections={sections}
-        renderItem={({ item }) => (
-          <TransactionItem
-            transaction={item}
-            accounts={accounts}
-            theme={theme}
-            currencyCode={settings.currency}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        )}
-        renderSectionHeader={({ section }) => (
-          <TransactionSectionHeader
-            year={section.year}
-            month={section.month}
-            netTotal={section.netTotal}
-            theme={theme}
-            currencyCode={settings.currency}
-          />
-        )}
-        keyExtractor={item => item.id}
-        contentContainerStyle={tw`p-4 pb-20`}
-        stickySectionHeadersEnabled={false}
-        ListEmptyComponent={
-          <EmptyTransactionList searchQuery={searchQuery} theme={theme} />
-        }
-      />
+        <SectionList
+          sections={sections}
+          renderItem={({ item }) => (
+            <TransactionItem
+              transaction={item}
+              accounts={accounts}
+              theme={theme}
+              currencyCode={settings.currency}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
+          renderSectionHeader={({ section }) => (
+            <TransactionSectionHeader
+              year={section.year}
+              month={section.month}
+              netTotal={section.netTotal}
+              theme={theme}
+              currencyCode={settings.currency}
+            />
+          )}
+          keyExtractor={item => item.id}
+          contentContainerStyle={tw`p-4 pb-20`}
+          stickySectionHeadersEnabled={false}
+          ListEmptyComponent={
+            <EmptyTransactionList searchQuery={searchQuery} theme={theme} />
+          }
+        />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[
-          tw`absolute right-5 bottom-5 w-14 h-14 rounded-full justify-center items-center shadow-lg`,
-          {
-            backgroundColor: theme.primary,
-          },
-        ]}
-        onPress={() => {
-          setEditingTransaction(undefined);
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={[
+            tw`absolute right-5 bottom-5 w-14 h-14 rounded-full justify-center items-center shadow-lg`,
+            {
+              backgroundColor: theme.primary,
+            },
+          ]}
+          onPress={() => {
+            setEditingTransaction(undefined);
+            setModalVisible(true);
+          }}
+        >
+          <Icon name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
 
-      {/* Add/Edit Modal */}
-      <AddTransactionModal
-        visible={modalVisible}
-        onClose={() => {
-          setModalVisible(false);
-          setEditingTransaction(undefined);
-        }}
-        onSave={handleAddTransaction}
-        accounts={accounts}
-        editTransaction={editingTransaction}
-      />
+        {/* Add/Edit Modal */}
+        <AddTransactionModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setEditingTransaction(undefined);
+          }}
+          onSave={handleAddTransaction}
+          accounts={accounts}
+          editTransaction={editingTransaction}
+        />
+      </AnimatedScreenWrapper>
     </View>
   );
 };

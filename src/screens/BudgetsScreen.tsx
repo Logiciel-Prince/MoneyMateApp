@@ -15,6 +15,7 @@ import AddBudgetModal from '../components/AddBudgetModal';
 import BudgetOverviewCard from '../components/BudgetOverviewCard';
 import BudgetCard from '../components/BudgetCard';
 import EmptyBudgetList from '../components/EmptyBudgetList';
+import AnimatedScreenWrapper from '../components/AnimatedScreenWrapper';
 
 const BudgetsScreen = () => {
   const systemColorScheme = useColorScheme();
@@ -110,70 +111,72 @@ const BudgetsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <FlatList
-        data={budgets}
-        ListHeaderComponent={renderOverview}
-        renderItem={({ item }) => {
-          const now = new Date();
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
+      <AnimatedScreenWrapper>
+        <FlatList
+          data={budgets}
+          ListHeaderComponent={renderOverview}
+          renderItem={({ item }) => {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
 
-          const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-          const previousYear =
-            currentMonth === 0 ? currentYear - 1 : currentYear;
+            const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const previousYear =
+              currentMonth === 0 ? currentYear - 1 : currentYear;
 
-          const currentSpent = getSpendingForPeriod(
-            item.category,
-            currentMonth,
-            currentYear,
-          );
-          const previousSpent = getSpendingForPeriod(
-            item.category,
-            previousMonth,
-            previousYear,
-          );
+            const currentSpent = getSpendingForPeriod(
+              item.category,
+              currentMonth,
+              currentYear,
+            );
+            const previousSpent = getSpendingForPeriod(
+              item.category,
+              previousMonth,
+              previousYear,
+            );
 
-          const categoryObj = categories.find(c => c.name === item.category);
+            const categoryObj = categories.find(c => c.name === item.category);
 
-          return (
-            <BudgetCard
-              budget={item}
-              currentSpent={currentSpent}
-              previousSpent={previousSpent}
-              category={categoryObj}
-              theme={theme}
-              currencyCode={settings.currency}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          );
-        }}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyBudgetList theme={theme} />}
-      />
+            return (
+              <BudgetCard
+                budget={item}
+                currentSpent={currentSpent}
+                previousSpent={previousSpent}
+                category={categoryObj}
+                theme={theme}
+                currencyCode={settings.currency}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            );
+          }}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<EmptyBudgetList theme={theme} />}
+        />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
-        onPress={() => {
-          setEditingBudget(undefined);
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="add" size={28} color="#FFF" />
-      </TouchableOpacity>
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.primary }]}
+          onPress={() => {
+            setEditingBudget(undefined);
+            setModalVisible(true);
+          }}
+        >
+          <Icon name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
 
-      {/* Add/Edit Modal */}
-      <AddBudgetModal
-        visible={modalVisible}
-        onClose={() => {
-          setModalVisible(false);
-          setEditingBudget(undefined);
-        }}
-        onSave={handleAddBudget}
-        editBudget={editingBudget}
-      />
+        {/* Add/Edit Modal */}
+        <AddBudgetModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setEditingBudget(undefined);
+          }}
+          onSave={handleAddBudget}
+          editBudget={editingBudget}
+        />
+      </AnimatedScreenWrapper>
     </View>
   );
 };
