@@ -19,6 +19,9 @@ import { useData } from '../context/DataContext';
 
 const Tab = createBottomTabNavigator();
 
+// Define header component outside of AppNavigator to avoid recreation on every render
+const HeaderComponent = (props: any) => <AppHeader {...props} />;
+
 const AppNavigator = () => {
   const systemColorScheme = useColorScheme();
   const { settings } = useData();
@@ -35,7 +38,7 @@ const AppNavigator = () => {
       <NavigationContainer>
         <Tab.Navigator
           screenOptions={({ route }) => ({
-            header: props => <AppHeader {...props} />,
+            header: HeaderComponent,
             tabBarIcon: ({ focused, color, size }) => {
               let iconName = '';
 

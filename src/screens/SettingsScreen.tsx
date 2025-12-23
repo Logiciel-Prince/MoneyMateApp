@@ -62,6 +62,10 @@ const SettingsScreen = ({ navigation }: any) => {
     { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
   ];
 
+  // Style constants to avoid inline style warnings
+  const whiteTextStyle = { color: '#FFF' };
+  const themeTextStyle = { color: theme.text };
+
   const handleLoadDemoData = () => {
     Alert.alert(
       'Load Demo Data',
@@ -440,12 +444,11 @@ const SettingsScreen = ({ navigation }: any) => {
                   onPress={() => setNewCatType(CategoryType.EXPENSE)}
                 >
                   <Text
-                    style={{
-                      color:
-                        newCatType === CategoryType.EXPENSE
-                          ? '#FFF'
-                          : theme.text,
-                    }}
+                    style={[
+                      newCatType === CategoryType.EXPENSE
+                        ? whiteTextStyle
+                        : themeTextStyle,
+                    ]}
                   >
                     Expense
                   </Text>
@@ -460,12 +463,11 @@ const SettingsScreen = ({ navigation }: any) => {
                   onPress={() => setNewCatType(CategoryType.INCOME)}
                 >
                   <Text
-                    style={{
-                      color:
-                        newCatType === CategoryType.INCOME
-                          ? '#FFF'
-                          : theme.text,
-                    }}
+                    style={[
+                      newCatType === CategoryType.INCOME
+                        ? whiteTextStyle
+                        : themeTextStyle,
+                    ]}
                   >
                     Income
                   </Text>
