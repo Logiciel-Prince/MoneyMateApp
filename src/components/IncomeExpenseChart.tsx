@@ -308,7 +308,8 @@ const IncomeExpenseChart: React.FC<IncomeExpenseChartProps> = ({
                 if (isLastBar) {
                   marginLeft = -(tooltipWidth - barWidth / 2);
                 } else if (isFirstBar) {
-                  marginLeft = -(barWidth / 2);
+                  // Ensure tooltip doesn't go off the left edge
+                  marginLeft = 0;
                 }
 
                 return (
