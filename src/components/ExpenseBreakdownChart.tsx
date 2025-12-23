@@ -1,5 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+  Easing,
+} from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
 import Icon from 'react-native-vector-icons/Ionicons';
 import tw from 'twrnc';
@@ -47,6 +54,11 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({
   currencyCode,
 }) => {
   const [pieMonthOffset, setPieMonthOffset] = useState(0);
+  const [direction, setDirection] = useState<'left' | 'right'>('left');
+
+  // Animation values - simple fade and slide
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   const isDarkMode = theme.mode === 'dark';
   const cardBgSecondary = isDarkMode ? '#1f2937' : '#f3f4f6';
@@ -55,9 +67,51 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({
   const pieDisplayDate = new Date();
   pieDisplayDate.setMonth(pieDisplayDate.getMonth() + pieMonthOffset);
 
-  const pieChartData = useMemo(() => {
+  // Simple, user-friendly animation
+  useEffect(() => {
+    // Slide distance based on direction
+    const slideDistance = direction === 'left' ? -50 : 50;
+
+    // Quick fade out and slide
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: slideDistance,
+        duration: 200,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Reset to opposite side
+      slideAnim.setValue(-slideDistance);
+
+      // Fade in and slide to center
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 250,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  }, [pieMonthOffset, fadeAnim, slideAnim, direction]);
+
+  // Helper to get data for any month offset
+  const getDataForMonth = (offset: number) => {
     const date = new Date();
-    date.setMonth(date.getMonth() + pieMonthOffset);
+    date.setMonth(date.getMonth() + offset);
 
     const monthlyExpenses = transactions.filter(
       t =>
@@ -98,7 +152,7 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({
       return palette[Math.abs(hash) % palette.length];
     };
 
-    let entries = Object.entries(grouped)
+    return Object.entries(grouped)
       .map(([name, amount]) => ({
         name,
         value: amount,
@@ -106,29 +160,12 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({
         text: '',
       }))
       .sort((a, b) => b.value - a.value);
-
-    return entries;
-  }, [transactions, pieMonthOffset]);
-
-  const totalExpenseForPie = pieChartData.reduce(
-    (acc, curr) => acc + curr.value,
-    0,
-  );
-
-  const pieChartCenterLabel = useMemo(
-    () =>
-      createPieChartCenterLabelComponent({
-        totalExpense: totalExpenseForPie,
-        currencyCode: currencyCode,
-        theme,
-      }),
-    [totalExpenseForPie, currencyCode, theme],
-  );
+  };
 
   return (
     <View
       style={[
-        tw`mx-5 mb-5 p-5 rounded-2xl shadow-md`,
+        tw`mx-5 mb-5 p-5 rounded-2xl shadow-md overflow-hidden`,
         {
           backgroundColor: theme.card,
         },
@@ -156,7 +193,10 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({
         ]}
       >
         <TouchableOpacity
-          onPress={() => setPieMonthOffset(p => p - 1)}
+          onPress={() => {
+            setDirection('right');
+            setPieMonthOffset(p => p - 1);
+          }}
           style={tw`p-1.5`}
         >
           <Icon name="chevron-back" size={18} color={theme.textSecondary} />
@@ -168,94 +208,110 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({
           })}
         </Text>
         <TouchableOpacity
-          onPress={() => setPieMonthOffset(p => p + 1)}
+          onPress={() => {
+            setDirection('left');
+            setPieMonthOffset(p => p + 1);
+          }}
           style={tw`p-1.5`}
         >
           <Icon name="chevron-forward" size={18} color={theme.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      <View style={tw`flex-1 items-center justify-center mt-2.5`}>
-        {pieChartData.length > 0 ? (
-          <>
-            <PieChart
-              key={`pie-chart-${transactions.length}-${totalExpenseForPie}-${pieMonthOffset}`}
-              data={pieChartData}
-              donut
-              showText={false}
-              radius={110}
-              innerRadius={80}
-              innerCircleColor={theme.card}
-              centerLabelComponent={pieChartCenterLabel}
-            />
+      {/* Simple animated container */}
+      <Animated.View
+        style={[
+          tw`w-full mt-2.5`,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateX: slideAnim }],
+          },
+        ]}
+      >
+        {(() => {
+          const data = getDataForMonth(pieMonthOffset);
+          const total = data.reduce((acc, curr) => acc + curr.value, 0);
+          const centerLabel = createPieChartCenterLabelComponent({
+            totalExpense: total,
+            currencyCode,
+            theme,
+          });
 
-            {/* Custom Legend List */}
-            <View style={tw`mt-5 w-full`}>
-              <ScrollView style={tw`max-h-[250px]`} nestedScrollEnabled>
-                {pieChartData.map((item, index) => (
-                  <View
-                    key={index}
-                    style={tw`flex-row justify-between items-center mb-3`}
-                  >
-                    <View style={tw`flex-row items-center gap-2.5`}>
-                      <View
-                        style={[
-                          tw`w-2.5 h-2.5 rounded-full`,
-                          { backgroundColor: item.color },
-                        ]}
-                      />
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          tw`text-sm font-medium`,
-                          { color: theme.textSecondary },
-                        ]}
-                      >
-                        {item.name}
-                      </Text>
-                    </View>
-
-                    <View style={tw`flex-row items-center gap-3`}>
-                      <View
-                        style={[
-                          tw`px-2 py-1 rounded-md min-w-12 items-center`,
-                          {
-                            backgroundColor: buttonBgSecondary,
-                          },
-                        ]}
-                      >
-                        <Text
+          return data.length > 0 ? (
+            <View style={tw`items-center justify-center`}>
+              <PieChart
+                key={`pie-${pieMonthOffset}`}
+                data={data}
+                donut
+                showText={false}
+                radius={110}
+                innerRadius={80}
+                innerCircleColor={theme.card}
+                centerLabelComponent={centerLabel}
+              />
+              <View style={tw`mt-5 w-full`}>
+                <ScrollView style={tw`max-h-[250px]`} nestedScrollEnabled>
+                  {data.map((item, index) => (
+                    <View
+                      key={index}
+                      style={tw`flex-row justify-between items-center mb-3`}
+                    >
+                      <View style={tw`flex-row items-center gap-2.5`}>
+                        <View
                           style={[
-                            tw`text-xs font-semibold`,
+                            tw`w-2.5 h-2.5 rounded-full`,
+                            { backgroundColor: item.color },
+                          ]}
+                        />
+                        <Text
+                          numberOfLines={1}
+                          style={[
+                            tw`text-sm font-medium`,
                             { color: theme.textSecondary },
                           ]}
                         >
-                          {((item.value / totalExpenseForPie) * 100).toFixed(1)}
-                          %
+                          {item.name}
                         </Text>
                       </View>
-                      <Text
-                        style={[
-                          tw`text-sm font-semibold w-20 text-right`,
-                          { color: theme.text },
-                        ]}
-                      >
-                        {formatCurrency(item.value, currencyCode)}
-                      </Text>
+                      <View style={tw`flex-row items-center gap-3`}>
+                        <View
+                          style={[
+                            tw`px-2 py-1 rounded-md min-w-12 items-center`,
+                            { backgroundColor: buttonBgSecondary },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              tw`text-xs font-semibold`,
+                              { color: theme.textSecondary },
+                            ]}
+                          >
+                            {((item.value / total) * 100).toFixed(1)}%
+                          </Text>
+                        </View>
+                        <Text
+                          style={[
+                            tw`text-sm font-semibold w-20 text-right`,
+                            { color: theme.text },
+                          ]}
+                        >
+                          {formatCurrency(item.value, currencyCode)}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                ))}
-              </ScrollView>
+                  ))}
+                </ScrollView>
+              </View>
             </View>
-          </>
-        ) : (
-          <View style={tw`h-50 justify-center items-center`}>
-            <Text style={{ color: theme.textSecondary }}>
-              No expenses for this month
-            </Text>
-          </View>
-        )}
-      </View>
+          ) : (
+            <View style={tw`h-50 justify-center items-center`}>
+              <Text style={{ color: theme.textSecondary }}>
+                No expenses for this month
+              </Text>
+            </View>
+          );
+        })()}
+      </Animated.View>
     </View>
   );
 };
